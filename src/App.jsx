@@ -688,14 +688,14 @@ const FishingLogApp = () => {
 
     console.log('✅ Found recommendations with confidence:', confidenceScore);
 
-    // Determine confidence level based on threshold
-    let confidence = '';
-    if (confidenceScore >= 40) confidence = '⭐⭐⭐⭐⭐ Excellent Match';
-    else if (confidenceScore >= 30) confidence = '⭐⭐⭐⭐ Strong Match';
-    else if (confidenceScore >= 20) confidence = '⭐⭐⭐ Good Match';
-    else confidence = '⭐⭐ Limited Data - Log More Catches for Better Recommendations';
+    // Determine confidence level based on threshold - out of 5 stars
+    let starCount = 0;
+    if (confidenceScore >= 40) starCount = 5;
+    else if (confidenceScore >= 30) starCount = 4;
+    else if (confidenceScore >= 20) starCount = 3;
+    else starCount = 2;
 
-    const recs = { 
+    const recs = {
       bestLures: {}, 
       bestLureTypes: {},
       bestLureColors: {},
@@ -705,7 +705,7 @@ const FishingLogApp = () => {
       avgDepth: 0,
       depthRange: { min: Infinity, max: -Infinity },
       matches: topMatches.length,
-      confidence: confidence,
+      starCount: starCount,
       confidenceScore: confidenceScore,
       hasLowConfidence: hasLowConfidence
     };
@@ -1514,8 +1514,13 @@ const FishingLogApp = () => {
                             <div className="rec-panel">
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                 <h2 className="rec-title">🎣 Recommendations Based on {recommendations.matches} Catch{recommendations.matches !== 1 ? 'es' : ''}</h2>
-                                <div style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                                  {recommendations.confidence}
+                                <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', background: '#fef5e7', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                                  {[...Array(recommendations.starCount)].map((_, i) => (
+                                    <span key={`full-${i}`} style={{ color: '#FFD700' }}>★</span>
+                                  ))}
+                                  {[...Array(5 - recommendations.starCount)].map((_, i) => (
+                                    <span key={`empty-${i}`} style={{ color: '#CCCCCC' }}>★</span>
+                                  ))}
                                 </div>
                               </div>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
