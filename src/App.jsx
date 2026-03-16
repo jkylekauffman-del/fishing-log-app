@@ -94,22 +94,16 @@ const FishingLogApp = () => {
   // Initialize Firebase and set up auth listener
   useEffect(() => {
     const setup = async () => {
-      const firebase = await initFirebase();
-      if (firebase) {
-        const { onAuthStateChanged } = firebase;
-        onAuthStateChanged(auth, (currentUser) => {
-          setUser(currentUser);
-          setFirebaseReady(true);
-          if (currentUser) {
-            loadCatchesFromFirebase(currentUser.uid);
-          } else {
-            setIsLoading(false);
-          }
-        });
-      } else {
+      initFirebase();
+      onAuthStateChanged(auth, (currentUser) => {
+        setUser(currentUser);
         setFirebaseReady(true);
-        setIsLoading(false);
-      }
+        if (currentUser) {
+          loadCatchesFromFirebase(currentUser.uid);
+        } else {
+          setIsLoading(false);
+        }
+      });
       requestUserLocation();
     };
     setup();
@@ -178,12 +172,7 @@ const FishingLogApp = () => {
 
   const loadCatchesFromFirebase = async (userId) => {
     try {
-      const firebase = await initFirebase();
-      if (!firebase) {
-        setIsLoading(false);
-        return;
-      }
-      const { collection, query, where, getDocs } = firebase;
+      initFirebase();
       const q = query(collection(db, 'catches'), where('userId', '==', userId));
       const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => ({ ...doc.data(), firebaseId: doc.id })).sort((a, b) => b.id - a.id);
@@ -199,9 +188,7 @@ const FishingLogApp = () => {
   const saveCatchToFirebase = async (catchData) => {
     if (!user) return null;
     try {
-      const firebase = await initFirebase();
-      if (!firebase) return null;
-      const { collection, addDoc } = firebase;
+      initFirebase();
       const docRef = await addDoc(collection(db, 'catches'), {
         ...catchData,
         userId: user.uid,
@@ -219,9 +206,7 @@ const FishingLogApp = () => {
   const deleteCatchFromFirebase = async (firebaseId) => {
     if (!user) return;
     try {
-      const firebase = await initFirebase();
-      if (!firebase) return;
-      const { doc, deleteDoc } = firebase;
+      initFirebase();
       await deleteDoc(doc(db, 'catches', firebaseId));
       setSyncStatus('✓ Synced');
     } catch (error) {
@@ -232,12 +217,7 @@ const FishingLogApp = () => {
 
   const signInWithGoogle = async () => {
     try {
-      const firebase = await initFirebase();
-      if (!firebase) {
-        alert('Cloud sync not available. Please try again.');
-        return;
-      }
-      const { signInWithPopup, GoogleAuthProvider } = firebase;
+      initFirebase();
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       setUser(result.user);
@@ -250,11 +230,8 @@ const FishingLogApp = () => {
 
   const signOutUser = async () => {
     try {
-      const firebase = await initFirebase();
-      if (firebase) {
-        const { signOut } = firebase;
-        await signOut(auth);
-      }
+      initFirebase();
+      await signOut(auth);
       setUser(null);
       setCatches([]);
     } catch (error) {
