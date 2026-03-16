@@ -165,15 +165,17 @@ const FishingLogApp = () => {
       const data = await response.json();
       console.log('Weather API Response:', data);
       
-      // Fetch moon phase separately
+      // Fetch moon phase separately with correct format
       let moonPhase = 0;
       try {
         const moonResponse = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=moon_phase&timezone=auto`
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=moon_phase&timezone=auto&forecast_days=1`
         );
         const moonData = await moonResponse.json();
         console.log('Moon API Response:', moonData);
-        moonPhase = moonData.daily?.moon_phase?.[0] || 0;
+        // Open-Meteo returns moon_phase as 0-1, get today's value
+        moonPhase = moonData.daily?.moon_phase?.[0];
+        console.log('Raw Moon Phase Value:', moonPhase);
       } catch (e) {
         console.log('Moon phase fetch error:', e);
       }
@@ -181,7 +183,7 @@ const FishingLogApp = () => {
       if (data.current) {
         const temp = Math.round(data.current.temperature_2m * 9/5 + 32);
         const windDir = getWindDirection(data.current.wind_direction_10m);
-        const moonPhaseName = getMoonPhaseName(moonPhase);
+        const moonPhaseName = getMoonPhaseName(moonPhase || 0);
         
         console.log('Processed Weather Data:', {
           temperature: temp,
@@ -201,7 +203,7 @@ const FishingLogApp = () => {
           cloudCover: data.current.cloud_cover,
           pressure: data.current.pressure_msl,
           uvIndex: data.current.uv_index || 0,
-          moonPhase: moonPhase,
+          moonPhase: moonPhase || 0,
           moonPhaseName: moonPhaseName
         });
         setFormData(prev => ({
@@ -224,11 +226,26 @@ const FishingLogApp = () => {
     // Open-Meteo returns 0-1 where:
     // 0 = New Moon
     // 0.25 = First Quarter (waxing)
-    // 0.5 = Full Moon
+    // 0.5 = Full Moon  
     // 0.75 = Last Quarter (waning)
-    // Each phase spans 1/8 (0.125) of the cycle
+    // Each of 8 phases = 0.125 wide
     
-    const adjustedPhase = phase % 1; // Normalize to 0-1
+    const adjustedPhase = (phase % 1 + 1) % 1; // Normalize to 0-1
+    
+    console.log('🌙 Moon Phase Debug:', {
+      rawPhase: phase,
+      adjustedPhase: adjustedPhase.toFixed(4),
+      rangeCheck: {
+        'New Moon (0.00-0.0625)': adjustedPhase < 0.0625,
+        'Waxing Crescent (0.0625-0.1875)': adjustedPhase >= 0.0625 && adjustedPhase < 0.1875,
+        'First Quarter (0.1875-0.3125)': adjustedPhase >= 0.1875 && adjustedPhase < 0.3125,
+        'Waxing Gibbous (0.3125-0.4375)': adjustedPhase >= 0.3125 && adjustedPhase < 0.4375,
+        'Full Moon (0.4375-0.5625)': adjustedPhase >= 0.4375 && adjustedPhase < 0.5625,
+        'Waning Gibbous (0.5625-0.6875)': adjustedPhase >= 0.5625 && adjustedPhase < 0.6875,
+        'Last Quarter (0.6875-0.8125)': adjustedPhase >= 0.6875 && adjustedPhase < 0.8125,
+        'Waning Crescent (0.8125-1.00)': adjustedPhase >= 0.8125
+      }
+    });
     
     if (adjustedPhase < 0.0625) return 'New Moon';
     if (adjustedPhase < 0.1875) return 'Waxing Crescent';
@@ -237,8 +254,7 @@ const FishingLogApp = () => {
     if (adjustedPhase < 0.5625) return 'Full Moon';
     if (adjustedPhase < 0.6875) return 'Waning Gibbous';
     if (adjustedPhase < 0.8125) return 'Last Quarter';
-    if (adjustedPhase < 0.9375) return 'Waning Crescent';
-    return 'New Moon';
+    return 'Waning Crescent'; // 0.8125-1.0
   };
 
   const getWindDirection = (degrees) => {
