@@ -139,6 +139,7 @@ const FishingLogApp = () => {
         moonPhase: weatherData.moonPhaseName || ''
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weatherData]);
 
   const requestUserLocation = () => {
