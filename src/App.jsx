@@ -742,58 +742,6 @@ const FishingLogApp = () => {
     return recs;
   };
 
-    // Determine confidence level based on threshold
-    let confidence = '';
-    if (confidenceScore >= 40) confidence = '⭐⭐⭐⭐⭐ Excellent Match';
-    else if (confidenceScore >= 30) confidence = '⭐⭐⭐⭐ Strong Match';
-    else if (confidenceScore >= 20) confidence = '⭐⭐⭐ Good Match';
-
-    const recs = { 
-      bestLures: {}, 
-      bestLureTypes: {},
-      bestLureColors: {},
-      bestSpecies: {}, 
-      bestCoverTypes: {}, 
-      avgWaterTemp: 0, 
-      avgDepth: 0,
-      depthRange: { min: Infinity, max: -Infinity },
-      matches: topMatches.length,
-      confidence: confidence,
-      confidenceScore: confidenceScore
-    };
-    
-    topMatches.forEach(c => {
-      if (c.lureName) {
-        const key = `${c.lureName} (${c.lureColor})`;
-        recs.bestLures[key] = (recs.bestLures[key] || 0) + 1;
-      }
-      if (c.lureType) {
-        recs.bestLureTypes[c.lureType] = (recs.bestLureTypes[c.lureType] || 0) + 1;
-      }
-      if (c.lureColor) {
-        recs.bestLureColors[c.lureColor] = (recs.bestLureColors[c.lureColor] || 0) + 1;
-      }
-      if (c.fishSpecies) recs.bestSpecies[c.fishSpecies] = (recs.bestSpecies[c.fishSpecies] || 0) + 1;
-      if (c.coverType) recs.bestCoverTypes[c.coverType] = (recs.bestCoverTypes[c.coverType] || 0) + 1;
-      if (c.waterTemp) recs.avgWaterTemp += parseFloat(c.waterTemp);
-      if (c.depth) {
-        const depth = parseFloat(c.depth);
-        recs.avgDepth += depth;
-        recs.depthRange.min = Math.min(recs.depthRange.min, depth);
-        recs.depthRange.max = Math.max(recs.depthRange.max, depth);
-      }
-    });
-
-    // Count how many catches actually have waterTemp and depth values
-    const catchesWithWaterTemp = topMatches.filter(c => c.waterTemp).length;
-    const catchesWithDepth = topMatches.filter(c => c.depth).length;
-
-    recs.avgWaterTemp = catchesWithWaterTemp > 0 ? (recs.avgWaterTemp / catchesWithWaterTemp).toFixed(1) : 0;
-    recs.avgDepth = catchesWithDepth > 0 ? (recs.avgDepth / catchesWithDepth).toFixed(1) : 0;
-    if (recs.depthRange.min === Infinity) recs.depthRange = null;
-    return recs;
-  };
-
   const recommendations = getRecommendations();
   console.log('Recommendations Debug:', { 
     catches: catches.length, 
