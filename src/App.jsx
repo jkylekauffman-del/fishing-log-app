@@ -1514,13 +1514,21 @@ const FishingLogApp = () => {
                             <div className="rec-panel">
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                                 <h2 className="rec-title">🎣 Recommendations Based on {recommendations.matches} Catch{recommendations.matches !== 1 ? 'es' : ''}</h2>
-                                <div style={{ display: 'flex', gap: '0.25rem', alignItems: 'center', background: '#fef5e7', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                                  {[...Array(recommendations.starCount)].map((_, i) => (
-                                    <span key={`full-${i}`} style={{ color: '#FFD700' }}>★</span>
-                                  ))}
-                                  {[...Array(5 - recommendations.starCount)].map((_, i) => (
-                                    <span key={`empty-${i}`} style={{ color: '#CCCCCC' }}>★</span>
-                                  ))}
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                                  <div style={{ display: 'flex', gap: '0.25rem', background: '#fef5e7', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1.5rem' }}>
+                                    {[...Array(recommendations.starCount)].map((_, i) => (
+                                      <span key={`full-${i}`} style={{ color: '#FF3333' }}>★</span>
+                                    ))}
+                                    {[...Array(5 - recommendations.starCount)].map((_, i) => (
+                                      <span key={`empty-${i}`} style={{ color: '#CCCCCC' }}>★</span>
+                                    ))}
+                                  </div>
+                                  <div style={{ color: '#0f4c27', fontSize: '0.85rem', fontWeight: '600', textAlign: 'right' }}>
+                                    {recommendations.starCount === 5 && 'Excellent Match - Conditions align perfectly with past catches'}
+                                    {recommendations.starCount === 4 && 'Strong Match - Very similar to successful conditions'}
+                                    {recommendations.starCount === 3 && 'Good Match - Similar patterns detected'}
+                                    {recommendations.starCount === 2 && 'Limited Data - Log more catches to improve accuracy'}
+                                  </div>
                                 </div>
                               </div>
                               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
