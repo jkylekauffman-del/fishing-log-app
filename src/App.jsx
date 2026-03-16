@@ -3,6 +3,9 @@ import { MapPin, Camera, Wind, Droplets, Clock, Trash2, Plus, ChevronDown, Map, 
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 // Firebase configuration
 const FIREBASE_CONFIG = {
@@ -70,6 +73,7 @@ const FishingLogApp = () => {
     windSpeed: '',
     windDirection: '',
     barometricPressure: '',
+    moonPhase: '',
     coverType: '',
     notes: ''
   });
@@ -138,18 +142,23 @@ const FishingLogApp = () => {
   const fetchWeatherData = async (lat, lng) => {
     try {
       const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m,cloud_cover,pressure_msl&timezone=auto`
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m,cloud_cover,pressure_msl&daily=moon_phase&timezone=auto`
       );
       const data = await response.json();
       if (data.current) {
         const temp = Math.round(data.current.temperature_2m * 9/5 + 32);
         const windDir = getWindDirection(data.current.wind_direction_10m);
+        const moonPhase = data.daily?.moon_phase?.[0] || 0;
+        const moonPhaseName = getMoonPhaseName(moonPhase);
+        
         setWeatherData({
           temperature: temp,
           windSpeed: data.current.wind_speed_10m,
           windDirection: windDir,
           cloudCover: data.current.cloud_cover,
-          pressure: data.current.pressure_msl
+          pressure: data.current.pressure_msl,
+          moonPhase: moonPhase,
+          moonPhaseName: moonPhaseName
         });
         setFormData(prev => ({
           ...prev,
@@ -157,12 +166,24 @@ const FishingLogApp = () => {
           windSpeed: Math.round(data.current.wind_speed_10m).toString(),
           windDirection: windDir,
           cloudCover: data.current.cloud_cover.toString(),
-          barometricPressure: data.current.pressure_msl.toFixed(1)
+          barometricPressure: data.current.pressure_msl.toFixed(1),
+          moonPhase: moonPhaseName
         }));
       }
     } catch (error) {
       console.log('Weather error:', error);
     }
+  };
+
+  const getMoonPhaseName = (phase) => {
+    if (phase < 0.125) return 'New Moon';
+    if (phase < 0.25) return 'Waxing Crescent';
+    if (phase < 0.375) return 'First Quarter';
+    if (phase < 0.5) return 'Waxing Gibbous';
+    if (phase < 0.625) return 'Full Moon';
+    if (phase < 0.75) return 'Waning Gibbous';
+    if (phase < 0.875) return 'Last Quarter';
+    return 'Waning Crescent';
   };
 
   const getWindDirection = (degrees) => {
@@ -300,6 +321,7 @@ const FishingLogApp = () => {
       windSpeed: weatherData?.windSpeed.toString() || '',
       windDirection: weatherData?.windDirection || '',
       barometricPressure: weatherData?.pressure.toString() || '',
+      moonPhase: weatherData?.moonPhaseName || '',
       coverType: '',
       notes: ''
     });
@@ -729,6 +751,7 @@ const FishingLogApp = () => {
                             <div className="form-group"><label>Cloud Cover (%)</label><input type="number" name="cloudCover" value={formData.cloudCover} onChange={handleInputChange} min="0" max="100" step="10" /></div>
                             <div className="form-group"><label>UV Index</label><input type="number" name="uvIndex" value={formData.uvIndex} onChange={handleInputChange} step="0.5" /></div>
                             <div className="form-group"><label>Barometric Pressure (mb)</label><input type="number" name="barometricPressure" value={formData.barometricPressure} onChange={handleInputChange} step="0.1" /></div>
+                            <div className="form-group"><label>Moon Phase</label><input type="text" name="moonPhase" value={formData.moonPhase} onChange={handleInputChange} placeholder="Auto-populated" readOnly style={{backgroundColor: '#f0f0f0'}} /></div>
                           </div>
                         </div>
 
@@ -771,6 +794,7 @@ const FishingLogApp = () => {
                               {c.depth && <div className="detail-row"><div className="detail-item"><div className="detail-label">Depth</div><div className="detail-value">{c.depth} ft</div></div><div className="detail-item"><div className="detail-label">Location</div><div className="detail-value">{parseFloat(c.latitude)?.toFixed(4)}, {parseFloat(c.longitude)?.toFixed(4)}</div></div></div>}
                               {c.coverType && <div className="detail-row"><div className="detail-item"><div className="detail-label">Cover</div><div className="detail-value">{c.coverType}</div></div></div>}
                               {c.weatherTemp && <div className="detail-row"><div className="detail-item"><div className="detail-label">Air Temp</div><div className="detail-value">{c.weatherTemp}°F</div></div><div className="detail-item"><div className="detail-label">Wind</div><div className="detail-value">{c.windSpeed} mph {c.windDirection}</div></div></div>}
+                              {c.moonPhase && <div className="detail-row"><div className="detail-item"><div className="detail-label">Moon Phase</div><div className="detail-value">🌙 {c.moonPhase}</div></div></div>}
                               {c.notes && <div style={{ marginBottom: '1rem' }}><div className="detail-label">Notes</div><div className="detail-value">{c.notes}</div></div>}
                               <button className="delete-btn" onClick={() => deleteCatch(c.id, c.firebaseId)}><Trash2 size={16} /> Delete</button>
                             </div>
@@ -786,31 +810,108 @@ const FishingLogApp = () => {
                 {activeTab === 'map' && (
                   <>
                     <div className="header">
-                      <h1>🗺️ Catch Map</h1>
-                      <p>View all your catches on the map</p>
+                      <h1>🗺️ Interactive Catch Map</h1>
+                      <p>Zoom and pan to explore where you caught fish</p>
                     </div>
 
                     {catches.length > 0 ? (
-                      <div className="catches-grid">
-                        {catches.map((c, idx) => (
-                          <div key={c.id} className="catch-card">
-                            <div className="catch-header">
-                              <div>
-                                <div className="catch-title">#{idx + 1} - {c.fishSpecies}</div>
-                                <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{parseFloat(c.latitude)?.toFixed(4)}, {parseFloat(c.longitude)?.toFixed(4)}</div>
-                              </div>
-                            </div>
-                            {(c.fishImage || c.lureImage) && (
-                              <div className="catch-images">
-                                {c.fishImage ? <div className="catch-image"><img src={c.fishImage} alt="Fish" /></div> : <div className="catch-image">No Photo</div>}
-                                {c.lureImage ? <div className="catch-image"><img src={c.lureImage} alt="Lure" /></div> : <div className="catch-image">No Photo</div>}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                      <div style={{ width: '100%', height: '600px', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
+                        <MapContainer 
+                          center={[parseFloat(catches[0].latitude) || 30.2672, parseFloat(catches[0].longitude) || -97.7431]} 
+                          zoom={13} 
+                          style={{ height: '100%', width: '100%' }}
+                        >
+                          <TileLayer
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                          />
+                          {catches.map((c, idx) => {
+                            const lat = parseFloat(c.latitude);
+                            const lng = parseFloat(c.longitude);
+                            if (!lat || !lng) return null;
+                            
+                            return (
+                              <Marker 
+                                key={c.id} 
+                                position={[lat, lng]}
+                                icon={L.icon({
+                                  iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDMyIDQwIj48Y2lyY2xlIGN4PSIxNiIgY3k9IjEwIiByPSI4IiBmaWxsPSIjMmVjYzcxIi8+PHBhdGggZD0iTSAxNiAyMCBDIDEwIDI1IDUgMzAgNSAzNSBDIDUgMzcgMTAgNDAgMTYgNDAgQyAyMiA0MCAxNiAzNyAxNiAzNSBDIDMwIDMwIDIyIDI1IDE2IDIwIiBmaWxsPSIjMjdhZTYwIi8+PC9zdmc+',
+                                  iconSize: [32, 40],
+                                  iconAnchor: [16, 40],
+                                  popupAnchor: [0, -40]
+                                })}
+                              >
+                                <Popup>
+                                  <div style={{ fontSize: '12px', width: '200px' }}>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#2ecc71' }}>
+                                      {c.fishSpecies || 'Unknown'} - {c.weight || 'N/A'} lbs
+                                    </div>
+                                    <div style={{ marginBottom: '6px' }}>
+                                      <strong>Date:</strong> {c.date} {c.time}
+                                    </div>
+                                    {c.lureColor && c.lureName && (
+                                      <div style={{ marginBottom: '6px' }}>
+                                        <strong>Lure:</strong> {c.lureName} ({c.lureColor})
+                                      </div>
+                                    )}
+                                    {c.waterTemp && (
+                                      <div style={{ marginBottom: '6px' }}>
+                                        <strong>Water Temp:</strong> {c.waterTemp}°F
+                                      </div>
+                                    )}
+                                    {c.depth && (
+                                      <div style={{ marginBottom: '6px' }}>
+                                        <strong>Depth:</strong> {c.depth} ft
+                                      </div>
+                                    )}
+                                    {c.weatherTemp && (
+                                      <div style={{ marginBottom: '6px' }}>
+                                        <strong>Air Temp:</strong> {c.weatherTemp}°F
+                                      </div>
+                                    )}
+                                    {c.moonPhase && (
+                                      <div style={{ marginBottom: '6px' }}>
+                                        <strong>Moon:</strong> 🌙 {c.moonPhase}
+                                      </div>
+                                    )}
+                                    {c.coverType && (
+                                      <div>
+                                        <strong>Cover:</strong> {c.coverType}
+                                      </div>
+                                    )}
+                                  </div>
+                                </Popup>
+                              </Marker>
+                            );
+                          })}
+                        </MapContainer>
                       </div>
                     ) : (
-                      <div className="no-catches"><p>No catches logged yet</p></div>
+                      <div className="no-catches"><p>No catches logged yet. Log your first catch to see it on the map!</p></div>
+                    )}
+
+                    {catches.length > 0 && (
+                      <div style={{ marginTop: '2rem' }}>
+                        <h3 style={{ color: '#fef5e7', marginBottom: '1rem', fontFamily: 'Montserrat, sans-serif' }}>All Catches</h3>
+                        <div className="catches-grid">
+                          {catches.map((c, idx) => (
+                            <div key={c.id} className="catch-card">
+                              <div className="catch-header">
+                                <div>
+                                  <div className="catch-title">#{idx + 1} - {c.fishSpecies}</div>
+                                  <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{c.date} {c.time}</div>
+                                </div>
+                              </div>
+                              {(c.fishImage || c.lureImage) && (
+                                <div className="catch-images">
+                                  {c.fishImage ? <div className="catch-image"><img src={c.fishImage} alt="Fish" /></div> : <div className="catch-image">No Photo</div>}
+                                  {c.lureImage ? <div className="catch-image"><img src={c.lureImage} alt="Lure" /></div> : <div className="catch-image">No Photo</div>}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     )}
                   </>
                 )}
