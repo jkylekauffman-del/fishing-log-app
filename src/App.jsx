@@ -3,12 +3,12 @@ import { MapPin, Camera, Wind, Thermometer, Droplets, Clock, Trash2, Plus, Chevr
 
 // Firebase configuration
 const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyB_vZy-7gzj5N8K1pQ2lR3sT4uV5wX6yZ7",
-  authDomain: "fishing-log-app-1a2b3c.firebaseapp.com",
-  projectId: "fishing-log-app-1a2b3c",
-  storageBucket: "fishing-log-app-1a2b3c.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890"
+  apiKey: "AIzaSyCAWh8uIsM7uHD0mAuqu3CZLMzZuMcuM1k",
+  authDomain: "fish-catch-log.firebaseapp.com",
+  projectId: "fish-catch-log",
+  storageBucket: "fish-catch-log.firebasestorage.app",
+  messagingSenderId: "820996110994",
+  appId: "1:820996110994:web:c6aa215c064c7c70f7844b"
 };
 
 // Initialize Firebase
