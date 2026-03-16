@@ -126,6 +126,21 @@ const FishingLogApp = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLocation]);
 
+  // Sync weatherData to formData when weather is fetched
+  useEffect(() => {
+    if (weatherData && !formData.weatherTemp) {
+      setFormData(prev => ({
+        ...prev,
+        weatherTemp: weatherData.temperature?.toString() || '',
+        windSpeed: Math.round(weatherData.windSpeed)?.toString() || '',
+        windDirection: weatherData.windDirection || '',
+        cloudCover: weatherData.cloudCover?.toString() || '',
+        barometricPressure: weatherData.pressure?.toFixed(1) || '',
+        moonPhase: weatherData.moonPhaseName || ''
+      }));
+    }
+  }, [weatherData]);
+
   const requestUserLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -141,14 +156,27 @@ const FishingLogApp = () => {
 
   const fetchWeatherData = async (lat, lng) => {
     try {
+      // Fetch current weather
       const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m,cloud_cover,pressure_msl&daily=moon_phase&timezone=auto`
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m,cloud_cover,pressure_msl&timezone=auto`
       );
       const data = await response.json();
+      
+      // Fetch moon phase separately
+      let moonPhase = 0;
+      try {
+        const moonResponse = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=moon_phase&timezone=auto`
+        );
+        const moonData = await moonResponse.json();
+        moonPhase = moonData.daily?.moon_phase?.[0] || 0;
+      } catch (e) {
+        console.log('Moon phase fetch error:', e);
+      }
+      
       if (data.current) {
         const temp = Math.round(data.current.temperature_2m * 9/5 + 32);
         const windDir = getWindDirection(data.current.wind_direction_10m);
-        const moonPhase = data.daily?.moon_phase?.[0] || 0;
         const moonPhaseName = getMoonPhaseName(moonPhase);
         
         setWeatherData({
@@ -728,8 +756,8 @@ const FishingLogApp = () => {
                         <div className="form-section">
                           <div className="section-title"><MapPin size={20} /> Location & Depth</div>
                           <div className="form-grid">
-                            <div className="form-group"><label>Latitude</label><input type="number" name="latitude" value={formData.latitude} onChange={handleInputChange} step="0.00001" /></div>
-                            <div className="form-group"><label>Longitude</label><input type="number" name="longitude" value={formData.longitude} onChange={handleInputChange} step="0.00001" /></div>
+                            <div className="form-group"><label>Latitude</label><input type="number" name="latitude" value={formData.latitude} onChange={handleInputChange} step="0.00001" placeholder="Auto-populated (editable)" /></div>
+                            <div className="form-group"><label>Longitude</label><input type="number" name="longitude" value={formData.longitude} onChange={handleInputChange} step="0.00001" placeholder="Auto-populated (editable)" /></div>
                             <div className="form-group"><label>Water Depth (ft)</label><input type="number" name="depth" value={formData.depth} onChange={handleInputChange} step="0.5" /></div>
                             <div className="form-group"><label>Water Temp (°F)</label><input type="number" name="waterTemp" value={formData.waterTemp} onChange={handleInputChange} step="0.1" /></div>
                           </div>
@@ -743,15 +771,15 @@ const FishingLogApp = () => {
                         </div>
 
                         <div className="form-section">
-                          <div className="section-title"><Wind size={20} /> Weather</div>
+                          <div className="section-title"><Wind size={20} /> Weather (All Editable)</div>
                           <div className="form-grid">
-                            <div className="form-group"><label>Air Temp (°F)</label><input type="number" name="weatherTemp" value={formData.weatherTemp} onChange={handleInputChange} step="0.1" /></div>
-                            <div className="form-group"><label>Wind Speed (mph)</label><input type="number" name="windSpeed" value={formData.windSpeed} onChange={handleInputChange} step="0.5" /></div>
-                            <div className="form-group"><label>Wind Direction</label><input type="text" name="windDirection" value={formData.windDirection} onChange={handleInputChange} /></div>
-                            <div className="form-group"><label>Cloud Cover (%)</label><input type="number" name="cloudCover" value={formData.cloudCover} onChange={handleInputChange} min="0" max="100" step="10" /></div>
+                            <div className="form-group"><label>Air Temp (°F)</label><input type="number" name="weatherTemp" value={formData.weatherTemp} onChange={handleInputChange} step="0.1" placeholder="Auto-populated (editable)" /></div>
+                            <div className="form-group"><label>Wind Speed (mph)</label><input type="number" name="windSpeed" value={formData.windSpeed} onChange={handleInputChange} step="0.5" placeholder="Auto-populated (editable)" /></div>
+                            <div className="form-group"><label>Wind Direction</label><input type="text" name="windDirection" value={formData.windDirection} onChange={handleInputChange} placeholder="e.g., NW (auto-populated, editable)" /></div>
+                            <div className="form-group"><label>Cloud Cover (%)</label><input type="number" name="cloudCover" value={formData.cloudCover} onChange={handleInputChange} min="0" max="100" step="10" placeholder="Auto-populated (editable)" /></div>
                             <div className="form-group"><label>UV Index</label><input type="number" name="uvIndex" value={formData.uvIndex} onChange={handleInputChange} step="0.5" /></div>
-                            <div className="form-group"><label>Barometric Pressure (mb)</label><input type="number" name="barometricPressure" value={formData.barometricPressure} onChange={handleInputChange} step="0.1" /></div>
-                            <div className="form-group"><label>Moon Phase</label><input type="text" name="moonPhase" value={formData.moonPhase} onChange={handleInputChange} placeholder="Auto-populated" readOnly style={{backgroundColor: '#f0f0f0'}} /></div>
+                            <div className="form-group"><label>Barometric Pressure (mb)</label><input type="number" name="barometricPressure" value={formData.barometricPressure} onChange={handleInputChange} step="0.1" placeholder="Auto-populated (editable)" /></div>
+                            <div className="form-group"><label>Moon Phase</label><input type="text" name="moonPhase" value={formData.moonPhase} onChange={handleInputChange} placeholder="e.g., Full Moon (auto-populated, editable)" /></div>
                           </div>
                         </div>
 
