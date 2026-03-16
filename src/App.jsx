@@ -61,6 +61,7 @@ const FishingLogApp = () => {
   const [syncStatus, setSyncStatus] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [isFullscreenMap, setIsFullscreenMap] = useState(false);
   const [selectedCatchForMap, setSelectedCatchForMap] = useState(null);
   const [selectedCatchDetails, setSelectedCatchDetails] = useState(null);
   const mapRef = useRef(null);
@@ -748,6 +749,23 @@ const FishingLogApp = () => {
         .stat-card { background: rgba(254,245,231,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(254,245,231,0.2); padding: 1.5rem; border-radius: 12px; color: #fef5e7; }
         .stat-label { font-size: 0.85rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; font-family: 'Montserrat',sans-serif; font-weight: 500; }
         .stat-value { font-size: 2rem; font-weight: 700; margin-top: 0.5rem; }
+        @media (max-width: 768px) {
+          .catch-card { padding: 0.6rem; }
+          .catch-header { padding: 0.7rem; }
+          .catch-title { font-size: 0.95rem; }
+          .catch-images { display: grid; grid-template-columns: 1fr; gap: 0.3rem; padding: 0.7rem; }
+          .catch-image { height: 80px; }
+          .catch-details { max-height: 150px; padding: 0.7rem; }
+          .catch-details.expanded { max-height: 800px; }
+          .detail-row { grid-template-columns: 1fr; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.85rem; }
+          .catch-images { display: grid; grid-template-columns: 1fr; }
+          .content-area { padding: 1rem; }
+          .header h1 { font-size: 1.8rem; }
+          .stat-card { padding: 1rem; }
+          .stat-value { font-size: 1.5rem; }
+          .catches-grid { grid-template-columns: 1fr; gap: 1rem; }
+          .form-grid { grid-template-columns: 1fr; }
+        }
         .action-bar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
         .btn-primary { background: #2ecc71; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-family: 'Montserrat',sans-serif; font-weight: 700; cursor: pointer; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(46,204,113,0.3); }
         .btn-primary:hover { background: #27ae60; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(46,204,113,0.4); }
@@ -811,7 +829,7 @@ const FishingLogApp = () => {
                 {syncStatus && <div className="sync-status"><Cloud size={16} /> {syncStatus}</div>}
                 {user ? (
                   <>
-                    <div className="user-info">Signed in as {user.displayName || user.email}</div>
+                    <div className="user-info">{user.displayName || user.email}'s Catches</div>
                     <button className="auth-btn signout" onClick={signOutUser}><LogOut size={16} /> Sign Out</button>
                   </>
                 ) : (
@@ -874,6 +892,15 @@ const FishingLogApp = () => {
                       <p>Track your catches and discover patterns</p>
                     </div>
 
+                    {/* Log New Catch Button - TOP */}
+                    <div className="action-bar">
+                      <button className="btn-primary" onClick={() => setShowForm(!showForm)}><Plus size={20} /> {showForm ? 'Cancel' : 'Log New Catch'}</button>
+                      <button className="btn-secondary" onClick={exportData}><Download size={20} /> Export Data</button>
+                      <button className="btn-secondary" onClick={() => fileInputRef.current?.click()}><Upload size={20} /> Import Data</button>
+                      <input ref={fileInputRef} type="file" accept=".json" onChange={importData} style={{ display: 'none' }} />
+                    </div>
+
+                    {/* Data Metrics */}
                     {stats && (
                       <div className="stats-grid">
                         <div className="stat-card"><div className="stat-label">Total Catches</div><div className="stat-value">{stats.total}</div></div>
@@ -883,12 +910,9 @@ const FishingLogApp = () => {
                       </div>
                     )}
 
-                    <div className="action-bar">
-                      <button className="btn-primary" onClick={() => setShowForm(!showForm)}><Plus size={20} /> {showForm ? 'Cancel' : 'Log New Catch'}</button>
+                    {/* Filters */}
+                    <div style={{ marginBottom: '1.5rem' }}>
                       <button className="btn-secondary" onClick={() => setShowFilters(!showFilters)}><Filter size={20} /> {showFilters ? 'Hide Filters' : 'Show Filters'}</button>
-                      <button className="btn-secondary" onClick={exportData}><Download size={20} /> Export Data</button>
-                      <button className="btn-secondary" onClick={() => fileInputRef.current?.click()}><Upload size={20} /> Import Data</button>
-                      <input ref={fileInputRef} type="file" accept=".json" onChange={importData} style={{ display: 'none' }} />
                     </div>
 
                     {showFilters && (
@@ -916,6 +940,7 @@ const FishingLogApp = () => {
                       </div>
                     )}
 
+                    {/* Catch Log Form and List */}
                     {showForm && (
                       <form onSubmit={handleSubmit} className="form-container">
                         <div className="form-section">
@@ -1176,25 +1201,59 @@ const FishingLogApp = () => {
                     )}
 
                     {filteredCatches.length > 0 ? (
-                      <div style={{ width: '100%', height: '600px', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
-                        <MapContainer 
-                            ref={mapRef}
-                            center={selectedCatchForMap ? [parseFloat(selectedCatchForMap.latitude), parseFloat(selectedCatchForMap.longitude)] : [parseFloat(filteredCatches[0].latitude) || 30.2672, parseFloat(filteredCatches[0].longitude) || -97.7431]} 
-                            zoom={selectedCatchForMap ? 16 : 13} 
-                            style={{ height: '100%', width: '100%' }}
-                          >
-                            {/* Satellite base layer */}
-                            <TileLayer
-                              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                              attribution='&copy; Esri'
-                            />
-                            
-                            {/* Labels and boundaries overlay */}
-                            <TileLayer
-                              url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
-                              attribution='&copy; Esri'
-                              opacity={0.7}
-                            />
+                      <>
+                        {/* Fullscreen Map Button */}
+                        <button
+                          onClick={() => setIsFullscreenMap(!isFullscreenMap)}
+                          style={{
+                            padding: '10px 20px',
+                            background: isFullscreenMap ? '#e74c3c' : '#2ecc71',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            fontSize: '1rem',
+                            marginBottom: '1rem'
+                          }}
+                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                          onMouseLeave={(e) => e.target.style.opacity = '1'}
+                        >
+                          {isFullscreenMap ? '⛔ Exit Fullscreen' : '⛶ Fullscreen Map'}
+                        </button>
+
+                        <div style={{ 
+                          width: '100%', 
+                          height: isFullscreenMap ? '100vh' : '600px', 
+                          borderRadius: isFullscreenMap ? '0' : '12px', 
+                          overflow: 'hidden', 
+                          marginBottom: isFullscreenMap ? '0' : '2rem', 
+                          boxShadow: '0 4px 15px rgba(0,0,0,0.3)',
+                          position: isFullscreenMap ? 'fixed' : 'relative',
+                          top: isFullscreenMap ? '0' : 'auto',
+                          left: isFullscreenMap ? '0' : 'auto',
+                          right: isFullscreenMap ? '0' : 'auto',
+                          bottom: isFullscreenMap ? '0' : 'auto',
+                          zIndex: isFullscreenMap ? '999' : 'auto'
+                        }}>
+                          <MapContainer 
+                              ref={mapRef}
+                              center={selectedCatchForMap ? [parseFloat(selectedCatchForMap.latitude), parseFloat(selectedCatchForMap.longitude)] : [parseFloat(filteredCatches[0].latitude) || 30.2672, parseFloat(filteredCatches[0].longitude) || -97.7431]} 
+                              zoom={selectedCatchForMap ? 16 : 13} 
+                              style={{ height: '100%', width: '100%' }}
+                            >
+                              {/* Satellite base layer */}
+                              <TileLayer
+                                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                                attribution='&copy; Esri'
+                              />
+                              
+                              {/* Labels and boundaries overlay */}
+                              <TileLayer
+                                url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                                attribution='&copy; Esri'
+                                opacity={0.7}
+                              />
                             {filteredCatches.map((c, idx) => {
                               const lat = parseFloat(c.latitude);
                               const lng = parseFloat(c.longitude);
@@ -1277,7 +1336,8 @@ const FishingLogApp = () => {
                             })}
                           </MapContainer>
                         </div>
-                      ) : (
+                      </>
+                    ) : (
                         <div className="no-catches">
                           <p>
                             {catches.length === 0 
