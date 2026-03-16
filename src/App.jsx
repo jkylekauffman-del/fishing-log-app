@@ -750,21 +750,13 @@ const FishingLogApp = () => {
         .stat-label { font-size: 0.85rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; font-family: 'Montserrat',sans-serif; font-weight: 500; }
         .stat-value { font-size: 2rem; font-weight: 700; margin-top: 0.5rem; }
         @media (max-width: 768px) {
-          .catch-card { padding: 0.6rem; }
-          .catch-header { padding: 0.7rem; }
-          .catch-title { font-size: 0.95rem; }
-          .catch-images { display: grid; grid-template-columns: 1fr; gap: 0.3rem; padding: 0.7rem; }
-          .catch-image { height: 80px; }
-          .catch-details { max-height: 150px; padding: 0.7rem; }
-          .catch-details.expanded { max-height: 800px; }
-          .detail-row { grid-template-columns: 1fr; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.85rem; }
+          .catch-card { padding: 0.8rem; }
+          .catch-details { max-height: 300px; }
           .catch-images { display: grid; grid-template-columns: 1fr; }
           .content-area { padding: 1rem; }
           .header h1 { font-size: 1.8rem; }
           .stat-card { padding: 1rem; }
           .stat-value { font-size: 1.5rem; }
-          .catches-grid { grid-template-columns: 1fr; gap: 1rem; }
-          .form-grid { grid-template-columns: 1fr; }
         }
         .action-bar { display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; }
         .btn-primary { background: #2ecc71; color: #fff; border: none; padding: 0.75rem 1.5rem; border-radius: 8px; font-family: 'Montserrat',sans-serif; font-weight: 700; cursor: pointer; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; transition: all 0.3s; box-shadow: 0 4px 15px rgba(46,204,113,0.3); }
@@ -1202,26 +1194,6 @@ const FishingLogApp = () => {
 
                     {filteredCatches.length > 0 ? (
                       <>
-                        {/* Fullscreen Map Button */}
-                        <button
-                          onClick={() => setIsFullscreenMap(!isFullscreenMap)}
-                          style={{
-                            padding: '10px 20px',
-                            background: isFullscreenMap ? '#e74c3c' : '#2ecc71',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: '6px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            fontSize: '1rem',
-                            marginBottom: '1rem'
-                          }}
-                          onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                          onMouseLeave={(e) => e.target.style.opacity = '1'}
-                        >
-                          {isFullscreenMap ? '⛔ Exit Fullscreen' : '⛶ Fullscreen Map'}
-                        </button>
-
                         <div style={{ 
                           width: '100%', 
                           height: isFullscreenMap ? '100vh' : '600px', 
@@ -1254,6 +1226,36 @@ const FishingLogApp = () => {
                                 attribution='&copy; Esri'
                                 opacity={0.7}
                               />
+
+                              {/* Fullscreen Exit Button (appears in fullscreen mode) */}
+                              {isFullscreenMap && (
+                                <div style={{
+                                  position: 'fixed',
+                                  top: '1rem',
+                                  right: '1rem',
+                                  zIndex: 1000
+                                }}>
+                                  <button
+                                    onClick={() => setIsFullscreenMap(false)}
+                                    style={{
+                                      padding: '10px 20px',
+                                      background: '#e74c3c',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      fontWeight: 'bold',
+                                      cursor: 'pointer',
+                                      fontSize: '1rem',
+                                      boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                                    onMouseLeave={(e) => e.target.style.opacity = '1'}
+                                  >
+                                    ⛔ Exit Fullscreen
+                                  </button>
+                                </div>
+                              )}
+
                             {filteredCatches.map((c, idx) => {
                               const lat = parseFloat(c.latitude);
                               const lng = parseFloat(c.longitude);
@@ -1336,6 +1338,30 @@ const FishingLogApp = () => {
                             })}
                           </MapContainer>
                         </div>
+
+                        {/* Fullscreen Map Button - Below Map */}
+                        {!isFullscreenMap && (
+                          <button
+                            onClick={() => setIsFullscreenMap(true)}
+                            style={{
+                              padding: '10px 20px',
+                              background: '#2ecc71',
+                              color: '#fff',
+                              border: 'none',
+                              borderRadius: '6px',
+                              fontWeight: 'bold',
+                              cursor: 'pointer',
+                              fontSize: '1rem',
+                              marginTop: '1rem',
+                              float: 'right'
+                            }}
+                            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                            onMouseLeave={(e) => e.target.style.opacity = '1'}
+                          >
+                            ⛶ Fullscreen Map
+                          </button>
+                        )}
+                        <div style={{ clear: 'both' }}></div>
                       </>
                     ) : (
                         <div className="no-catches">
