@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Camera, Wind, Thermometer, Droplets, Clock, Trash2, Plus, ChevronDown, Map, Filter, Download, Upload, Navigation, LogOut, LogIn, Cloud } from 'lucide-react';
+import { MapPin, Camera, Wind, Droplets, Clock, Trash2, Plus, ChevronDown, Map, Filter, Download, Upload, LogOut, LogIn, Cloud } from 'lucide-react';
 
 // Firebase configuration
 const FIREBASE_CONFIG = {
@@ -128,6 +128,7 @@ const FishingLogApp = () => {
         time: new Date().toTimeString().slice(0, 5)
       }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLocation]);
 
   const requestUserLocation = () => {
