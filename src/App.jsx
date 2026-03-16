@@ -50,7 +50,9 @@ const FishingLogApp = () => {
   const [user, setUser] = useState(null);
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
-  const [mapView, setMapView] = useState('street');
+  const [selectedCatchForMap, setSelectedCatchForMap] = useState(null);
+  const [showContours, setShowContours] = useState(false);
+  const mapRef = useRef(null);
   
   const [formData, setFormData] = useState({
     fishImage: null,
@@ -143,6 +145,19 @@ const FishingLogApp = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weatherData]);
+
+  // Handle zoom to selected catch on map
+  useEffect(() => {
+    if (selectedCatchForMap && mapRef.current) {
+      const lat = parseFloat(selectedCatchForMap.latitude);
+      const lng = parseFloat(selectedCatchForMap.longitude);
+      if (lat && lng) {
+        setTimeout(() => {
+          mapRef.current.setView([lat, lng], 16);
+        }, 100);
+      }
+    }
+  }, [selectedCatchForMap]);
 
   const requestUserLocation = () => {
     if (navigator.geolocation) {
@@ -948,6 +963,67 @@ const FishingLogApp = () => {
                               {c.lureName && <div className="detail-row"><div className="detail-item"><div className="detail-label">Lure</div><div className="detail-value">{c.lureName}</div></div><div className="detail-item"><div className="detail-label">Type</div><div className="detail-value">{c.lureType}</div></div></div>}
                               {c.length && <div className="detail-row"><div className="detail-item"><div className="detail-label">Length</div><div className="detail-value">{c.length} in</div></div><div className="detail-item"><div className="detail-label">Water Temp</div><div className="detail-value">{c.waterTemp}°F</div></div></div>}
                               {c.depth && <div className="detail-row"><div className="detail-item"><div className="detail-label">Depth</div><div className="detail-value">{c.depth} ft</div></div><div className="detail-item"><div className="detail-label">Location</div><div className="detail-value">{parseFloat(c.latitude)?.toFixed(4)}, {parseFloat(c.longitude)?.toFixed(4)}</div></div></div>}
+                              
+                              {/* Mini Map Preview */}
+                              {c.latitude && c.longitude && (
+                                <div style={{ marginBottom: '1rem' }}>
+                                  <div className="detail-label">📍 Map Preview</div>
+                                  <div 
+                                    onClick={() => {
+                                      setSelectedCatchForMap(c);
+                                      setActiveTab('map');
+                                    }}
+                                    style={{
+                                      width: '100%',
+                                      height: '200px',
+                                      borderRadius: '8px',
+                                      overflow: 'hidden',
+                                      cursor: 'pointer',
+                                      border: '2px solid #2ecc71',
+                                      marginTop: '0.5rem',
+                                      position: 'relative',
+                                      backgroundColor: '#1a1a1a'
+                                    }}
+                                  >
+                                    <div style={{
+                                      position: 'absolute',
+                                      top: '50%',
+                                      left: '50%',
+                                      transform: 'translate(-50%, -50%)',
+                                      zIndex: 10,
+                                      color: '#FF4200',
+                                      fontSize: '2rem'
+                                    }}>📍</div>
+                                    <img 
+                                      src={`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${parseFloat(c.longitude)},${parseFloat(c.latitude)},13,0,0/400x200@2x?access_token=pk.eyJ1IjoiZmlzaGluZ2xvZyIsImEiOiJjbTVwczd6eHowMDAwMnBwOHk5YWw3aHQyIn0.test`}
+                                      alt="Catch location"
+                                      style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        objectFit: 'cover'
+                                      }}
+                                      onError={(e) => {
+                                        e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23333' width='400' height='200'/%3E%3Ctext x='50%25' y='50%25' fill='%23999' text-anchor='middle' dy='.3em' font-size='16'%3EMap unavailable%3C/text%3E%3C/svg%3E`;
+                                      }}
+                                    />
+                                    <div style={{
+                                      position: 'absolute',
+                                      bottom: '10px',
+                                      left: '10px',
+                                      background: 'rgba(46, 204, 113, 0.9)',
+                                      color: 'white',
+                                      padding: '6px 12px',
+                                      borderRadius: '4px',
+                                      fontSize: '0.85rem',
+                                      fontWeight: 'bold',
+                                      zIndex: 11
+                                    }}>
+                                      Click to view on map 🗺️
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
                               {c.coverType && <div className="detail-row"><div className="detail-item"><div className="detail-label">Cover</div><div className="detail-value">{c.coverType}</div></div></div>}
                               {c.weatherTemp && <div className="detail-row"><div className="detail-item"><div className="detail-label">Air Temp</div><div className="detail-value">{c.weatherTemp}°F</div></div><div className="detail-item"><div className="detail-label">Wind</div><div className="detail-value">{c.windSpeed} mph {c.windDirection}</div></div></div>}
                               {c.moonPhase && <div className="detail-row"><div className="detail-item"><div className="detail-label">Moon Phase</div><div className="detail-value">🌙 {c.moonPhase}</div></div></div>}
@@ -974,53 +1050,58 @@ const FishingLogApp = () => {
                       <>
                         <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                           <button 
-                            className={`btn-secondary ${activeTab === 'map' && typeof mapView !== 'undefined' && mapView === 'street' ? 'active' : ''}`}
-                            onClick={() => setMapView('street')}
-                            style={{ background: mapView === 'street' ? '#2ecc71' : '#3498db' }}
+                            className={`btn-secondary ${!showContours ? 'active' : ''}`}
+                            onClick={() => setShowContours(false)}
+                            style={{ background: !showContours ? '#2ecc71' : '#3498db' }}
                           >
-                            🗺️ Street Map
+                            🛰️ Satellite Only
                           </button>
                           <button 
-                            className={`btn-secondary ${activeTab === 'map' && typeof mapView !== 'undefined' && mapView === 'satellite' ? 'active' : ''}`}
-                            onClick={() => setMapView('satellite')}
-                            style={{ background: mapView === 'satellite' ? '#2ecc71' : '#3498db' }}
+                            className={`btn-secondary ${showContours ? 'active' : ''}`}
+                            onClick={() => setShowContours(true)}
+                            style={{ background: showContours ? '#2ecc71' : '#3498db' }}
                           >
-                            🛰️ Satellite View
+                            📊 Satellite + Contours
                           </button>
                         </div>
 
                         <div style={{ width: '100%', height: '600px', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
                           <MapContainer 
-                            center={[parseFloat(catches[0].latitude) || 30.2672, parseFloat(catches[0].longitude) || -97.7431]} 
-                            zoom={13} 
+                            ref={mapRef}
+                            center={selectedCatchForMap ? [parseFloat(selectedCatchForMap.latitude), parseFloat(selectedCatchForMap.longitude)] : [parseFloat(catches[0].latitude) || 30.2672, parseFloat(catches[0].longitude) || -97.7431]} 
+                            zoom={selectedCatchForMap ? 16 : 13} 
                             style={{ height: '100%', width: '100%' }}
                           >
-                            {mapView === 'satellite' ? (
+                            {/* Satellite base layer */}
+                            <TileLayer
+                              url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                              attribution='&copy; Esri'
+                            />
+                            
+                            {/* USGS Topographic/Contour overlay */}
+                            {showContours && (
                               <TileLayer
-                                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-                                attribution='&copy; Esri'
-                              />
-                            ) : (
-                              <TileLayer
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                url="https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"
+                                attribution='USGS'
+                                opacity={0.5}
                               />
                             )}
                             {catches.map((c, idx) => {
                               const lat = parseFloat(c.latitude);
                               const lng = parseFloat(c.longitude);
                               if (!lat || !lng) return null;
+                              const isSelected = selectedCatchForMap?.id === c.id;
                               
                               return (
                                 <Marker 
                                   key={c.id} 
                                   position={[lat, lng]}
                                   icon={L.icon({
-                                    // Bright red/orange fish icon with black outline for maximum visibility
-                                    iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDQwIDUwIj48ZGVmcz48ZmlsdGVyIGlkPSJzaGFkb3ciPjxmZU9mZnNldCBkdj0iMiIgZmxvb2Rpbj0iIWluaXRpYWwiLz48ZmVDb21wb25lbnRUcmFuc2Zlcj48ZmVGdW5jQSB0eXBlPSJsaW5lYXIiIHRhYmxlVmFsdWVzPSIwIDAuNyIvPjwvZmVDb21wb25lbnRUcmFuc2Zlcj48L2ZpbHRlcj48L2RlZnM+PGNpcmNsZSBjeD0iMjAiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiNGRjQyMDAiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTSAyMCAyNCBDIDEyIDMwIDYgMzUgNiA0MCBDIDYgNDMgMTIgNDggMjAgNDggQyAyOCA0OCAzNCA0MyAzNCA0MCBDIDM0IDM1IDI4IDMwIDIwIDI0IiBmaWxsPSIjRkY1NzAwIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==',
-                                    iconSize: [40, 50],
-                                    iconAnchor: [20, 50],
-                                    popupAnchor: [0, -50],
+                                    // Use larger, brighter icon for selected catch
+                                    iconUrl: isSelected ? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI3MCIgdmlld0JveD0iMCAwIDYwIDcwIj48ZGVmcz48ZmlsdGVyIGlkPSJnbG93Ij48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIyIiByZXN1bHQ9ImNvbG9yZWRCbHVyIi8+PC9maWx0ZXI+PC9kZWZzPjxjaXJjbGUgY3g9IjMwIiBjeT0iMTgiIHI9IjE0IiBmaWxsPSIjRkZGRjAwIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMyIgZmlsdGVyPSJ1cmwoI2dsb3cpIi8+PHBhdGggZD0iTSAzMCAzNiBDIDE4IDQ0IDggNTAgOCA1OCBDIDGGOTY1IDE4IDcwIDMwIDcwIEMgNDIgNzAgNTIgNjUgNTIgNTggQyA1MiA1MCA0MiA0NCAzMCAzNiIgZmlsbD0iI0ZGQjcwMCIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjMiIGZpbHRlcj0idXJsKCNnbG93KSIvPjwvc3ZnPg==' : 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDQwIDUwIj48ZGVmcz48ZmlsdGVyIGlkPSJzaGFkb3ciPjxmZU9mZnNldCBkdj0iMiIgZmxvb2Rpbj0iIWluaXRpYWwiLz48ZmVDb21wb25lbnRUcmFuc2Zlcj48ZmVGdW5jQSB0eXBlPSJsaW5lYXIiIHRhYmxlVmFsdWVzPSIwIDAuNyIvPjwvZmVDb21wb25lbnRUcmFuc2Zlcj48L2ZpbHRlcj48L2RlZnM+PGNpcmNsZSBjeD0iMjAiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiNGRjQyMDAiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTSAyMCAyNCBDIDEyIDMwIDYgMzUgNiA0MCBDIDYgNDMgMTIgNDggMjAgNDggQyAyOCA0OCAzNCA0MyAzNCA0MCBDIDM0IDM1IDI4IDMwIDIwIDI0IiBmaWxsPSIjRkY1NzAwIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==',
+                                    iconSize: isSelected ? [60, 70] : [40, 50],
+                                    iconAnchor: isSelected ? [30, 70] : [20, 50],
+                                    popupAnchor: isSelected ? [0, -70] : [0, -50],
                                     shadowSize: [40, 40],
                                     shadowAnchor: [12, 40]
                                   })}
