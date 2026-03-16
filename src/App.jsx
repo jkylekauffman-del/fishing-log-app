@@ -107,15 +107,6 @@ const FishingLogApp = () => {
     maxAirTemp: ''
   });
 
-  // Save catches to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem('fishingCatches', JSON.stringify(catches));
-    } catch (e) {
-      console.log('Error saving to localStorage:', e);
-    }
-  }, [catches]);
-
   // Initialize Firebase and set up auth listener
   useEffect(() => {
     const setup = async () => {
@@ -325,11 +316,8 @@ const FishingLogApp = () => {
   };
 
   const saveCatchToFirebase = async (catchData) => {
-    // Catch is already saved locally via localStorage
-    // Try to sync to Firebase in the background
     if (!user) {
-      setSyncStatus('💾 Saved locally (not signed in)');
-      return 'local_' + Date.now();
+      throw new Error('Not signed in');
     }
     
     try {
@@ -339,14 +327,10 @@ const FishingLogApp = () => {
         userId: user.uid,
         createdAt: new Date().toISOString()
       });
-      setSyncStatus('☁️ Synced to cloud');
-      setTimeout(() => setSyncStatus(''), 3000);
-      return docRef.id;
+      return docRef.id; // Return real Firebase ID
     } catch (error) {
-      console.log('Firebase sync error:', error.code, error.message);
-      setSyncStatus('💾 Saved locally (offline)');
-      // Data is still saved in localStorage, so no data loss
-      return 'local_' + Date.now();
+      console.log('Firebase save error:', error.code, error.message);
+      throw error; // Throw so handleSubmit knows it failed
     }
   };
 
@@ -438,19 +422,36 @@ const FishingLogApp = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!user) {
+      setSyncStatus('⚠ Must sign in to save catches');
+      return;
+    }
+
+    setSyncStatus('⏳ Saving...');
     const newCatch = { id: Date.now(), ...formData };
     
-    if (user) {
-      // Save to Firebase
+    try {
+      // Save to Firebase FIRST - wait for confirmation
       const firebaseId = await saveCatchToFirebase(newCatch);
-      if (firebaseId) {
-        newCatch.firebaseId = firebaseId;
+      
+      if (!firebaseId || firebaseId.startsWith('local_')) {
+        // Firebase save failed
+        setSyncStatus('⚠ Save failed - please check connection and try again');
+        return;
       }
+      
+      // Only add to state if Firebase save succeeded
+      newCatch.firebaseId = firebaseId;
+      setCatches(prev => [newCatch, ...prev]);
+      setSyncStatus('✓ Catch saved!');
+      setTimeout(() => setSyncStatus(''), 2000);
+      resetForm();
+      setShowForm(false);
+    } catch (error) {
+      console.log('Submit error:', error);
+      setSyncStatus('⚠ Save failed - please try again');
     }
-    
-    setCatches(prev => [newCatch, ...prev]);
-    resetForm();
-    setShowForm(false);
   };
 
   const resetForm = () => {
