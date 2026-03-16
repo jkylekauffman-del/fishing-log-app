@@ -59,6 +59,7 @@ const FishingLogApp = () => {
   const [user, setUser] = useState(null);
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedCatchForMap, setSelectedCatchForMap] = useState(null);
   const [selectedCatchDetails, setSelectedCatchDetails] = useState(null);
   const mapRef = useRef(null);
@@ -321,16 +322,28 @@ const FishingLogApp = () => {
     }
     
     try {
+      console.log('Saving catch for user:', user.uid);
       initFirebase();
-      const docRef = await addDoc(collection(db, 'catches'), {
+      
+      if (!db) {
+        throw new Error('Firebase database not initialized');
+      }
+      
+      const dataToSave = {
         ...catchData,
         userId: user.uid,
         createdAt: new Date().toISOString()
-      });
-      return docRef.id; // Return real Firebase ID
+      };
+      
+      console.log('Saving data to Firebase:', dataToSave);
+      const docRef = await addDoc(collection(db, 'catches'), dataToSave);
+      console.log('Successfully saved with ID:', docRef.id);
+      return docRef.id;
     } catch (error) {
-      console.log('Firebase save error:', error.code, error.message);
-      throw error; // Throw so handleSubmit knows it failed
+      console.error('Firebase save error - Code:', error.code);
+      console.error('Firebase save error - Message:', error.message);
+      console.error('Firebase save error - Full:', error);
+      throw new Error('Firebase error: ' + error.message);
     }
   };
 
@@ -428,7 +441,7 @@ const FishingLogApp = () => {
       return;
     }
 
-    setSyncStatus('⏳ Saving...');
+    setIsSaving(true);
     const newCatch = { id: Date.now(), ...formData };
     
     try {
@@ -437,6 +450,7 @@ const FishingLogApp = () => {
       
       if (!firebaseId || firebaseId.startsWith('local_')) {
         // Firebase save failed
+        setIsSaving(false);
         setSyncStatus('⚠ Save failed - please check connection and try again');
         return;
       }
@@ -446,11 +460,13 @@ const FishingLogApp = () => {
       setCatches(prev => [newCatch, ...prev]);
       setSyncStatus('✓ Catch saved!');
       setTimeout(() => setSyncStatus(''), 2000);
+      setIsSaving(false);
       resetForm();
       setShowForm(false);
     } catch (error) {
       console.log('Submit error:', error);
-      setSyncStatus('⚠ Save failed - please try again');
+      setIsSaving(false);
+      setSyncStatus('⚠ Save failed - ' + error.message);
     }
   };
 
@@ -1475,6 +1491,47 @@ const FishingLogApp = () => {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Loading/Saving Modal */}
+        {isSaving && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000
+          }}>
+            <div style={{
+              background: '#0f4c27',
+              borderRadius: '16px',
+              padding: '3rem',
+              textAlign: 'center',
+              border: '3px solid #2ecc71',
+              boxShadow: '0 10px 50px rgba(0,0,0,0.5)'
+            }}>
+              <div style={{
+                fontSize: '4rem',
+                marginBottom: '1.5rem',
+                animation: 'spin 2s linear infinite'
+              }}>
+                ⏳
+              </div>
+              <h2 style={{ color: '#2ecc71', margin: '0 0 0.5rem 0', fontSize: '1.8rem' }}>Saving Your Catch...</h2>
+              <p style={{ color: '#fef5e7', margin: '0', fontSize: '1.1rem', opacity: 0.9 }}>Please don't close this window</p>
+              <style>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+              `}</style>
             </div>
           </div>
         )}
