@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Camera, Wind, Droplets, Clock, Trash2, Plus, ChevronDown, Map, Filter, Download, Upload, LogOut, LogIn, Cloud } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc } from 'firebase/firestore';
+import { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 
 // Firebase configuration
 const FIREBASE_CONFIG = {
@@ -16,19 +19,14 @@ let db = null;
 let auth = null;
 let isFirebaseReady = false;
 
-const initFirebase = async () => {
-  if (isFirebaseReady) return;
+const initFirebase = () => {
+  if (isFirebaseReady) return { db, auth };
   try {
-    const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js');
-    const { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc } = await import('https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js');
-    const { getAuth, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut } = await import('https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js');
-    
     const app = initializeApp(FIREBASE_CONFIG);
     db = getFirestore(app);
     auth = getAuth(app);
     isFirebaseReady = true;
-    
-    return { db, auth, getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut };
+    return { db, auth, collection, getDocs, addDoc, deleteDoc, doc, query, where, updateDoc, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut };
   } catch (error) {
     console.error('Firebase init error:', error);
     return null;
