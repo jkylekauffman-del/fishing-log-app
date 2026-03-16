@@ -1016,22 +1016,23 @@ const FishingLogApp = () => {
                             </button>
                           </div>
 
-                          <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
-                            <div className="form-section">
-                              <div className="section-title"><Camera size={20} /> Fish & Lure Photos</div>
-                              <div className="form-grid">
-                                <div className="form-group">
-                                  <label>Fish Photo</label>
-                                  <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'fishImage')} />
-                                  {formData.fishImage && <div className="image-preview"><img src={formData.fishImage} alt="Fish" /></div>}
-                                </div>
-                                <div className="form-group">
-                                  <label>Lure Photo</label>
-                                  <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'lureImage')} />
-                                  {formData.lureImage && <div className="image-preview"><img src={formData.lureImage} alt="Lure" /></div>}
+                          <form onSubmit={handleSubmit}>
+                            <div className="form-container">
+                              <div className="form-section">
+                                <div className="section-title"><Camera size={20} /> Fish & Lure Photos</div>
+                                <div className="form-grid">
+                                  <div className="form-group">
+                                    <label>Fish Photo</label>
+                                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'fishImage')} />
+                                    {formData.fishImage && <div className="image-preview"><img src={formData.fishImage} alt="Fish" /></div>}
+                                  </div>
+                                  <div className="form-group">
+                                    <label>Lure Photo</label>
+                                    <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'lureImage')} />
+                                    {formData.lureImage && <div className="image-preview"><img src={formData.lureImage} alt="Lure" /></div>}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
 
                             <div className="form-section">
                               <div className="section-title"><Droplets size={20} /> Fish Details</div>
@@ -1109,6 +1110,7 @@ const FishingLogApp = () => {
                             <div className="btn-group">
                               <button type="button" className="btn-danger" onClick={() => setShowForm(false)}>Cancel</button>
                               <button type="submit" className="btn-primary">Save Catch</button>
+                            </div>
                             </div>
                           </form>
                         </div>
