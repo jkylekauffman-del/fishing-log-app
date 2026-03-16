@@ -1454,5 +1454,7 @@ const FishingLogApp = () => {
         )}
       </div>
     </div>
+  );
+};
 
 export default FishingLogApp;
