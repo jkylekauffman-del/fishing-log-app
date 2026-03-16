@@ -766,7 +766,7 @@ const FishingLogApp = () => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@400;700&family=Montserrat:wght@500;700&display=swap');
         * { box-sizing: border-box; }
-        body { font-family: 'Merriweather', serif; margin: 0; }
+        body { font-family: 'Merriweather', serif; margin: 0; overflow-x: hidden; }
         .app-wrapper { min-height: 100vh; display: flex; flex-direction: column; }
         .header-bar { background: rgba(0,0,0,0.3); backdrop-filter: blur(10px); border-bottom: 2px solid rgba(46,204,113,0.3); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
         .header-left { display: flex; align-items: center; gap: 1rem; }
@@ -983,7 +983,9 @@ const FishingLogApp = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         zIndex: 2000,
-                        padding: '2rem'
+                        padding: '1rem',
+                        overflow: 'hidden',
+                        boxSizing: 'border-box'
                       }}>
                         <div style={{
                           background: 'linear-gradient(135deg, #0f4c27 0%, #1a5c3a 50%, #0d3d20 100%)',
@@ -991,10 +993,12 @@ const FishingLogApp = () => {
                           maxWidth: '900px',
                           maxHeight: '90vh',
                           overflowY: 'auto',
+                          overflowX: 'hidden',
                           width: '100%',
                           border: '3px solid #2ecc71',
-                          padding: '2rem',
-                          boxShadow: '0 10px 50px rgba(0,0,0,0.5)'
+                          padding: '1.5rem',
+                          boxShadow: '0 10px 50px rgba(0,0,0,0.5)',
+                          boxSizing: 'border-box'
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                             <h2 style={{ color: '#2ecc71', margin: 0, fontSize: '1.8rem' }}>📝 Log a New Catch</h2>
