@@ -322,7 +322,10 @@ const FishingLogApp = () => {
   };
 
   const saveCatchToFirebase = async (catchData) => {
-    if (!user) return null;
+    if (!user) {
+      setSyncStatus('⚠ Not signed in');
+      return null;
+    }
     try {
       initFirebase();
       const docRef = await addDoc(collection(db, 'catches'), {
@@ -331,11 +334,13 @@ const FishingLogApp = () => {
         createdAt: new Date().toISOString()
       });
       setSyncStatus('✓ Synced');
+      setTimeout(() => setSyncStatus(''), 3000); // Clear status after 3 seconds
       return docRef.id;
     } catch (error) {
-      console.log('Save error:', error);
-      setSyncStatus('⚠ Sync failed');
-      return null;
+      console.log('Save error:', error.code, error.message);
+      setSyncStatus('⚠ Sync failed - check connection');
+      // Try to save locally at least
+      return 'local_' + Date.now();
     }
   };
 
@@ -872,7 +877,17 @@ const FishingLogApp = () => {
                             <div className="form-group"><label>Cloud Cover (%)</label><input type="number" name="cloudCover" value={formData.cloudCover} onChange={handleInputChange} min="0" max="100" step="10" placeholder="Auto-populated (editable)" /></div>
                             <div className="form-group"><label>UV Index</label><input type="number" name="uvIndex" value={formData.uvIndex} onChange={handleInputChange} step="0.5" /></div>
                             <div className="form-group"><label>Barometric Pressure (mb)</label><input type="number" name="barometricPressure" value={formData.barometricPressure} onChange={handleInputChange} step="0.1" placeholder="Auto-populated (editable)" /></div>
-                            <div className="form-group"><label>Moon Phase</label><input type="text" name="moonPhase" value={formData.moonPhase} onChange={handleInputChange} placeholder="e.g., Full Moon (auto-populated, editable)" /></div>
+                            <div className="form-group"><label>Moon Phase</label><select name="moonPhase" value={formData.moonPhase} onChange={handleInputChange} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #2ecc71', backgroundColor: '#0f4c27', color: '#fef5e7', fontSize: '1rem', cursor: 'pointer' }}>
+                              <option value="">— Select or auto-populated —</option>
+                              <option value="New Moon">🌑 New Moon</option>
+                              <option value="Waxing Crescent">🌒 Waxing Crescent</option>
+                              <option value="First Quarter">🌓 First Quarter</option>
+                              <option value="Waxing Gibbous">🌔 Waxing Gibbous</option>
+                              <option value="Full Moon">🌕 Full Moon</option>
+                              <option value="Waning Gibbous">🌖 Waning Gibbous</option>
+                              <option value="Last Quarter">🌗 Last Quarter</option>
+                              <option value="Waning Crescent">🌘 Waning Crescent</option>
+                            </select></div>
                           </div>
                         </div>
 
