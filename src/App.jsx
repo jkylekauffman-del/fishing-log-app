@@ -884,12 +884,9 @@ const FishingLogApp = () => {
                       <p>Track your catches and discover patterns</p>
                     </div>
 
-                    {/* Log New Catch Button - TOP */}
-                    <div className="action-bar">
-                      <button className="btn-primary" onClick={() => setShowForm(!showForm)}><Plus size={20} /> {showForm ? 'Cancel' : 'Log New Catch'}</button>
-                      <button className="btn-secondary" onClick={exportData}><Download size={20} /> Export Data</button>
-                      <button className="btn-secondary" onClick={() => fileInputRef.current?.click()}><Upload size={20} /> Import Data</button>
-                      <input ref={fileInputRef} type="file" accept=".json" onChange={importData} style={{ display: 'none' }} />
+                    {/* Log New Catch Button - TOP - Bigger and Centered */}
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+                      <button className="btn-primary" onClick={() => setShowForm(!showForm)} style={{ padding: '15px 30px', fontSize: '1.1rem' }}><Plus size={24} /> {showForm ? 'Cancel' : 'Log New Catch'}</button>
                     </div>
 
                     {/* Data Metrics */}
@@ -1096,6 +1093,15 @@ const FishingLogApp = () => {
                     ) : (
                       !showForm && <div className="no-catches"><p>🎣 {catches.length === 0 ? 'No catches yet' : 'No catches match filters'}</p></div>
                     )}
+
+                    {/* Export/Import Buttons - Bottom */}
+                    {!showForm && (
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid rgba(46, 204, 113, 0.3)' }}>
+                        <button className="btn-secondary" onClick={exportData}><Download size={20} /> Export Data</button>
+                        <button className="btn-secondary" onClick={() => fileInputRef.current?.click()}><Upload size={20} /> Import Data</button>
+                        <input ref={fileInputRef} type="file" accept=".json" onChange={importData} style={{ display: 'none' }} />
+                      </div>
+                    )}
                   </>
                 )}
 
@@ -1256,6 +1262,36 @@ const FishingLogApp = () => {
                                 </div>
                               )}
 
+                              {/* Fullscreen Button - Top Right */}
+                              {!isFullscreenMap && (
+                                <div style={{
+                                  position: 'fixed',
+                                  top: '1rem',
+                                  right: '1rem',
+                                  zIndex: 500
+                                }}>
+                                  <button
+                                    onClick={() => setIsFullscreenMap(true)}
+                                    style={{
+                                      padding: '8px 12px',
+                                      background: '#2ecc71',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      fontWeight: 'bold',
+                                      cursor: 'pointer',
+                                      fontSize: '1.2rem',
+                                      boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                                    onMouseLeave={(e) => e.target.style.opacity = '1'}
+                                    title="Fullscreen Map"
+                                  >
+                                    ⟦ ⟧
+                                  </button>
+                                </div>
+                              )}
+
                             {filteredCatches.map((c, idx) => {
                               const lat = parseFloat(c.latitude);
                               const lng = parseFloat(c.longitude);
@@ -1338,30 +1374,6 @@ const FishingLogApp = () => {
                             })}
                           </MapContainer>
                         </div>
-
-                        {/* Fullscreen Map Button - Below Map */}
-                        {!isFullscreenMap && (
-                          <button
-                            onClick={() => setIsFullscreenMap(true)}
-                            style={{
-                              padding: '10px 20px',
-                              background: '#2ecc71',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: '6px',
-                              fontWeight: 'bold',
-                              cursor: 'pointer',
-                              fontSize: '1rem',
-                              marginTop: '1rem',
-                              float: 'right'
-                            }}
-                            onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                            onMouseLeave={(e) => e.target.style.opacity = '1'}
-                          >
-                            ⛶ Fullscreen Map
-                          </button>
-                        )}
-                        <div style={{ clear: 'both' }}></div>
                       </>
                     ) : (
                         <div className="no-catches">
