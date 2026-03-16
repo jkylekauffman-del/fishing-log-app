@@ -39,7 +39,16 @@ const initFirebase = () => {
 const FishingLogApp = () => {
   const fileInputRef = useRef(null);
   
-  const [catches, setCatches] = useState([]);
+  const [catches, setCatches] = useState(() => {
+    // Initialize from localStorage if available
+    try {
+      const saved = localStorage.getItem('fishingCatches');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      console.log('Error loading from localStorage:', e);
+      return [];
+    }
+  });
   const [showForm, setShowForm] = useState(false);
   const [expandedId, setExpandedId] = useState(null);
   const [activeTab, setActiveTab] = useState('log');
@@ -97,6 +106,15 @@ const FishingLogApp = () => {
     minAirTemp: '',
     maxAirTemp: ''
   });
+
+  // Save catches to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('fishingCatches', JSON.stringify(catches));
+    } catch (e) {
+      console.log('Error saving to localStorage:', e);
+    }
+  }, [catches]);
 
   // Initialize Firebase and set up auth listener
   useEffect(() => {
@@ -306,26 +324,14 @@ const FishingLogApp = () => {
     return directions[Math.round(degrees / 22.5) % 16];
   };
 
-  const loadCatchesFromFirebase = async (userId) => {
-    try {
-      initFirebase();
-      const q = query(collection(db, 'catches'), where('userId', '==', userId));
-      const snapshot = await getDocs(q);
-      const data = snapshot.docs.map(doc => ({ ...doc.data(), firebaseId: doc.id })).sort((a, b) => b.id - a.id);
-      setCatches(data);
-      setSyncStatus('✓ Synced');
-    } catch (error) {
-      console.log('Load error:', error);
-      setSyncStatus('⚠ Sync failed');
-    }
-    setIsLoading(false);
-  };
-
   const saveCatchToFirebase = async (catchData) => {
+    // Catch is already saved locally via localStorage
+    // Try to sync to Firebase in the background
     if (!user) {
-      setSyncStatus('⚠ Not signed in');
+      setSyncStatus('💾 Saved locally (not signed in)');
       return 'local_' + Date.now();
     }
+    
     try {
       initFirebase();
       const docRef = await addDoc(collection(db, 'catches'), {
@@ -333,39 +339,45 @@ const FishingLogApp = () => {
         userId: user.uid,
         createdAt: new Date().toISOString()
       });
-      setSyncStatus('✓ Synced to cloud');
+      setSyncStatus('☁️ Synced to cloud');
       setTimeout(() => setSyncStatus(''), 3000);
       return docRef.id;
     } catch (error) {
-      console.log('Save error:', error.code, error.message);
-      setSyncStatus('✓ Saved locally (offline)');
-      setTimeout(() => setSyncStatus(''), 3000);
-      // Save to localStorage as backup
-      try {
-        const localCatches = JSON.parse(localStorage.getItem('fishingCatches') || '[]');
-        localCatches.push({ ...catchData, id: 'local_' + Date.now() });
-        localStorage.setItem('fishingCatches', JSON.stringify(localCatches));
-      } catch (e) {
-        console.log('localStorage error:', e);
-      }
+      console.log('Firebase sync error:', error.code, error.message);
+      setSyncStatus('💾 Saved locally (offline)');
+      // Data is still saved in localStorage, so no data loss
       return 'local_' + Date.now();
     }
   };
 
-  // Load catches from localStorage on mount
-  useEffect(() => {
-    if (user && firebaseReady) {
-      try {
-        const localCatches = JSON.parse(localStorage.getItem('fishingCatches') || '[]');
-        if (localCatches.length > 0) {
-          setCatches(prev => [...localCatches, ...prev]);
-          localStorage.removeItem('fishingCatches'); // Clear after loading
+  // Load from Firebase and merge with localStorage
+  const loadCatchesFromFirebase = async (userId) => {
+    try {
+      initFirebase();
+      const q = query(collection(db, 'catches'), where('userId', '==', userId));
+      const snapshot = await getDocs(q);
+      const firebaseCatches = snapshot.docs.map(doc => ({
+        id: doc.id,
+        firebaseId: doc.id,
+        ...doc.data()
+      }));
+      
+      // Merge Firebase catches with localStorage (Firebase takes precedence for duplicates)
+      const localCatches = JSON.parse(localStorage.getItem('fishingCatches') || '[]');
+      const merged = [...firebaseCatches];
+      localCatches.forEach(local => {
+        if (!merged.find(f => f.id === local.id)) {
+          merged.push(local);
         }
-      } catch (e) {
-        console.log('Error loading local catches:', e);
-      }
+      });
+      
+      setCatches(merged);
+      setIsLoading(false);
+    } catch (error) {
+      console.log('Load error:', error);
+      setIsLoading(false);
     }
-  }, [user, firebaseReady]);
+  };
 
   const deleteCatchFromFirebase = async (firebaseId) => {
     if (!user) return;
