@@ -500,6 +500,7 @@ const FishingLogApp = () => {
     const currentMonth = now.getMonth();
     const currentHour = now.getHours();
     const currentTemp = weatherData?.temperature || null;
+    const currentMoonPhase = weatherData?.moonPhaseName || null;
     
     const scored = catches.map(c => {
       let score = 100;
@@ -517,6 +518,12 @@ const FishingLogApp = () => {
       if (c.windSpeed && weatherData?.windSpeed) {
         score -= Math.abs(parseFloat(c.windSpeed) - weatherData.windSpeed) * 4;
       }
+      if (currentMoonPhase && c.moonPhase) {
+        score -= (currentMoonPhase === c.moonPhase ? 0 : 10);
+      }
+      if (c.cloudCover && weatherData?.cloudCover !== undefined) {
+        score -= Math.abs(parseFloat(c.cloudCover) - weatherData.cloudCover) * 2;
+      }
       
       return { ...c, matchScore: Math.max(0, score) };
     });
@@ -524,21 +531,43 @@ const FishingLogApp = () => {
     const topMatches = scored.sort((a, b) => b.matchScore - a.matchScore).slice(0, 5).filter(c => c.matchScore >= 40);
     if (topMatches.length === 0) return null;
 
-    const recs = { bestLures: {}, bestSpecies: {}, bestCoverTypes: {}, avgWaterTemp: 0, avgDepth: 0, matches: topMatches.length };
+    const recs = { 
+      bestLures: {}, 
+      bestLureTypes: {},
+      bestLureColors: {},
+      bestSpecies: {}, 
+      bestCoverTypes: {}, 
+      avgWaterTemp: 0, 
+      avgDepth: 0,
+      depthRange: { min: Infinity, max: -Infinity },
+      matches: topMatches.length 
+    };
     
     topMatches.forEach(c => {
       if (c.lureName) {
         const key = `${c.lureName} (${c.lureColor})`;
         recs.bestLures[key] = (recs.bestLures[key] || 0) + 1;
       }
+      if (c.lureType) {
+        recs.bestLureTypes[c.lureType] = (recs.bestLureTypes[c.lureType] || 0) + 1;
+      }
+      if (c.lureColor) {
+        recs.bestLureColors[c.lureColor] = (recs.bestLureColors[c.lureColor] || 0) + 1;
+      }
       if (c.fishSpecies) recs.bestSpecies[c.fishSpecies] = (recs.bestSpecies[c.fishSpecies] || 0) + 1;
       if (c.coverType) recs.bestCoverTypes[c.coverType] = (recs.bestCoverTypes[c.coverType] || 0) + 1;
       if (c.waterTemp) recs.avgWaterTemp += parseFloat(c.waterTemp);
-      if (c.depth) recs.avgDepth += parseFloat(c.depth);
+      if (c.depth) {
+        const depth = parseFloat(c.depth);
+        recs.avgDepth += depth;
+        recs.depthRange.min = Math.min(recs.depthRange.min, depth);
+        recs.depthRange.max = Math.max(recs.depthRange.max, depth);
+      }
     });
 
     recs.avgWaterTemp = (recs.avgWaterTemp / topMatches.length).toFixed(1);
     recs.avgDepth = (recs.avgDepth / topMatches.length).toFixed(1);
+    if (recs.depthRange.min === Infinity) recs.depthRange = null;
     return recs;
   };
 
@@ -711,7 +740,7 @@ const FishingLogApp = () => {
                     {recommendations && (
                       <div className="rec-panel">
                         <h2 className="rec-title">💡 Smart Recommendations</h2>
-                        <p style={{ color: '#fef5e7', marginTop: '0.5rem', opacity: 0.8 }}>Based on {recommendations.matches} similar past catches</p>
+                        <p style={{ color: '#fef5e7', marginTop: '0.5rem', opacity: 0.8 }}>Based on {recommendations.matches} similar past catches matching current conditions</p>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
                           {Object.keys(recommendations.bestSpecies).length > 0 && (
                             <div className="rec-card">
@@ -729,10 +758,37 @@ const FishingLogApp = () => {
                               ))}
                             </div>
                           )}
+                          {Object.keys(recommendations.bestLureTypes).length > 0 && (
+                            <div className="rec-card">
+                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>📊 Lure Types</div>
+                              {Object.entries(recommendations.bestLureTypes).sort(([,a],[,b]) => b-a).slice(0,3).map(([type, cnt]) => (
+                                <div key={type} className="rec-item">{type} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
+                              ))}
+                            </div>
+                          )}
+                          {Object.keys(recommendations.bestLureColors).length > 0 && (
+                            <div className="rec-card">
+                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🎨 Lure Colors</div>
+                              {Object.entries(recommendations.bestLureColors).sort(([,a],[,b]) => b-a).slice(0,3).map(([color, cnt]) => (
+                                <div key={color} className="rec-item">{color} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
+                              ))}
+                            </div>
+                          )}
+                          {Object.keys(recommendations.bestCoverTypes).length > 0 && (
+                            <div className="rec-card">
+                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🌿 Cover Types</div>
+                              {Object.entries(recommendations.bestCoverTypes).sort(([,a],[,b]) => b-a).slice(0,3).map(([cover, cnt]) => (
+                                <div key={cover} className="rec-item">{cover} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
+                              ))}
+                            </div>
+                          )}
                           <div className="rec-card">
                             <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>💧 Water Conditions</div>
-                            <div className="rec-item">Expected Temp: {recommendations.avgWaterTemp}°F</div>
-                            <div className="rec-item">Expected Depth: {recommendations.avgDepth} ft</div>
+                            <div className="rec-item">Water Temp: {recommendations.avgWaterTemp}°F</div>
+                            <div className="rec-item">Average Depth: {recommendations.avgDepth} ft</div>
+                            {recommendations.depthRange && (
+                              <div className="rec-item">Depth Range: {recommendations.depthRange.min}-{recommendations.depthRange.max} ft</div>
+                            )}
                           </div>
                         </div>
                       </div>
