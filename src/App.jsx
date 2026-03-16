@@ -139,7 +139,7 @@ const FishingLogApp = () => {
         windDirection: weatherData.windDirection || '',
         cloudCover: weatherData.cloudCover?.toString() || '',
         barometricPressure: weatherData.pressure?.toFixed(1) || '',
-        uvIndex: weatherData.uvIndex?.toString() || '',
+        uvIndex: (weatherData.uvIndex !== undefined ? weatherData.uvIndex : 0).toString(),
         moonPhase: weatherData.moonPhaseName || ''
       }));
     }
@@ -244,7 +244,7 @@ const FishingLogApp = () => {
           windDirection: windDir,
           cloudCover: data.current.cloud_cover,
           pressure: data.current.pressure_msl,
-          uvIndex: data.current.uv_index || 0,
+          uvIndex: data.current.uv_index !== undefined ? data.current.uv_index : 0,
           moonPhase: moonPhase,
           moonPhaseName: moonPhaseName
         });
@@ -255,9 +255,9 @@ const FishingLogApp = () => {
           weatherTemp: temp.toString(),
           windSpeed: Math.round(data.current.wind_speed_10m).toString(),
           windDirection: windDir,
-          cloudCover: data.current.cloud_cover.toString(),
+          cloudCover: Math.round(data.current.cloud_cover / 10) * 10,
           barometricPressure: data.current.pressure_msl.toFixed(1),
-          uvIndex: (data.current.uv_index || 0).toString(),
+          uvIndex: (data.current.uv_index !== undefined ? data.current.uv_index : 0).toString(),
           moonPhase: moonPhaseName
         }));
       }
@@ -580,8 +580,12 @@ const FishingLogApp = () => {
       }
     });
 
-    recs.avgWaterTemp = (recs.avgWaterTemp / topMatches.length).toFixed(1);
-    recs.avgDepth = (recs.avgDepth / topMatches.length).toFixed(1);
+    // Count how many catches actually have waterTemp and depth values
+    const catchesWithWaterTemp = topMatches.filter(c => c.waterTemp).length;
+    const catchesWithDepth = topMatches.filter(c => c.depth).length;
+
+    recs.avgWaterTemp = catchesWithWaterTemp > 0 ? (recs.avgWaterTemp / catchesWithWaterTemp).toFixed(1) : 0;
+    recs.avgDepth = catchesWithDepth > 0 ? (recs.avgDepth / catchesWithDepth).toFixed(1) : 0;
     if (recs.depthRange.min === Infinity) recs.depthRange = null;
     return recs;
   };
@@ -754,63 +758,6 @@ const FishingLogApp = () => {
                       <h1>🎣 Fishing Catch Log</h1>
                       <p>Track your catches and discover patterns</p>
                     </div>
-
-                    {recommendations && (
-                      <div className="rec-panel">
-                        <h2 className="rec-title">💡 Smart Recommendations</h2>
-                        <p style={{ color: '#fef5e7', marginTop: '0.5rem', opacity: 0.8 }}>Based on {recommendations.matches} similar past catches matching current conditions</p>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
-                          {Object.keys(recommendations.bestSpecies).length > 0 && (
-                            <div className="rec-card">
-                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🎣 Expected Species</div>
-                              {Object.entries(recommendations.bestSpecies).sort(([,a],[,b]) => b-a).slice(0,3).map(([sp, cnt]) => (
-                                <div key={sp} className="rec-item">{sp} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
-                              ))}
-                            </div>
-                          )}
-                          {Object.keys(recommendations.bestLures).length > 0 && (
-                            <div className="rec-card">
-                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🪝 Recommended Lures</div>
-                              {Object.entries(recommendations.bestLures).sort(([,a],[,b]) => b-a).slice(0,3).map(([lure, cnt]) => (
-                                <div key={lure} className="rec-item">{lure} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
-                              ))}
-                            </div>
-                          )}
-                          {Object.keys(recommendations.bestLureTypes).length > 0 && (
-                            <div className="rec-card">
-                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>📊 Lure Types</div>
-                              {Object.entries(recommendations.bestLureTypes).sort(([,a],[,b]) => b-a).slice(0,3).map(([type, cnt]) => (
-                                <div key={type} className="rec-item">{type} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
-                              ))}
-                            </div>
-                          )}
-                          {Object.keys(recommendations.bestLureColors).length > 0 && (
-                            <div className="rec-card">
-                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🎨 Lure Colors</div>
-                              {Object.entries(recommendations.bestLureColors).sort(([,a],[,b]) => b-a).slice(0,3).map(([color, cnt]) => (
-                                <div key={color} className="rec-item">{color} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
-                              ))}
-                            </div>
-                          )}
-                          {Object.keys(recommendations.bestCoverTypes).length > 0 && (
-                            <div className="rec-card">
-                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🌿 Cover Types</div>
-                              {Object.entries(recommendations.bestCoverTypes).sort(([,a],[,b]) => b-a).slice(0,3).map(([cover, cnt]) => (
-                                <div key={cover} className="rec-item">{cover} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
-                              ))}
-                            </div>
-                          )}
-                          <div className="rec-card">
-                            <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>💧 Water Conditions</div>
-                            <div className="rec-item">Water Temp: {recommendations.avgWaterTemp}°F</div>
-                            <div className="rec-item">Average Depth: {recommendations.avgDepth} ft</div>
-                            {recommendations.depthRange && (
-                              <div className="rec-item">Depth Range: {recommendations.depthRange.min}-{recommendations.depthRange.max} ft</div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
                     {stats && (
                       <div className="stats-grid">
@@ -1018,19 +965,8 @@ const FishingLogApp = () => {
                     </div>
 
                     {catches.length > 0 ? (
-                      <>
-                        <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                          <button 
-                            className="btn-secondary"
-                            onClick={() => setActiveTab('map')}
-                            style={{ background: '#2ecc71' }}
-                          >
-                            🛰️ Satellite + Labels
-                          </button>
-                        </div>
-
-                        <div style={{ width: '100%', height: '600px', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
-                          <MapContainer 
+                      <div style={{ width: '100%', height: '600px', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
+                        <MapContainer 
                             ref={mapRef}
                             center={selectedCatchForMap ? [parseFloat(selectedCatchForMap.latitude), parseFloat(selectedCatchForMap.longitude)] : [parseFloat(catches[0].latitude) || 30.2672, parseFloat(catches[0].longitude) || -97.7431]} 
                             zoom={selectedCatchForMap ? 16 : 13} 
@@ -1106,6 +1042,23 @@ const FishingLogApp = () => {
                                           <strong>Cover:</strong> {c.coverType}
                                         </div>
                                       )}
+                                      <button
+                                        onClick={() => setSelectedCatchDetails(c)}
+                                        style={{
+                                          width: '100%',
+                                          marginTop: '8px',
+                                          padding: '6px',
+                                          background: '#FF4200',
+                                          color: 'white',
+                                          border: 'none',
+                                          borderRadius: '4px',
+                                          fontWeight: 'bold',
+                                          cursor: 'pointer',
+                                          fontSize: '11px'
+                                        }}
+                                      >
+                                        View Full Details
+                                      </button>
                                     </div>
                                   </Popup>
                                 </Marker>
@@ -1113,10 +1066,9 @@ const FishingLogApp = () => {
                             })}
                           </MapContainer>
                         </div>
-                      </>
-                    ) : (
-                      <div className="no-catches"><p>No catches logged yet. Log your first catch to see it on the map!</p></div>
-                    )}
+                      ) : (
+                        <div className="no-catches"><p>No catches logged yet. Log your first catch to see it on the map!</p></div>
+                      )}
 
                     {catches.length > 0 && (
                       <div style={{ marginTop: '2rem' }}>
