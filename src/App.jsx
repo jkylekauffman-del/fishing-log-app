@@ -157,9 +157,9 @@ const FishingLogApp = () => {
 
   const fetchWeatherData = async (lat, lng) => {
     try {
-      // Fetch current weather
+      // Fetch current weather with UV index
       const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m,cloud_cover,pressure_msl&timezone=auto`
+        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m,cloud_cover,pressure_msl,uv_index&timezone=auto`
       );
       const data = await response.json();
       
@@ -186,6 +186,7 @@ const FishingLogApp = () => {
           windDirection: windDir,
           cloudCover: data.current.cloud_cover,
           pressure: data.current.pressure_msl,
+          uvIndex: data.current.uv_index || 0,
           moonPhase: moonPhase,
           moonPhaseName: moonPhaseName
         });
@@ -196,6 +197,7 @@ const FishingLogApp = () => {
           windDirection: windDir,
           cloudCover: data.current.cloud_cover.toString(),
           barometricPressure: data.current.pressure_msl.toFixed(1),
+          uvIndex: (data.current.uv_index || 0).toString(),
           moonPhase: moonPhaseName
         }));
       }
@@ -205,14 +207,16 @@ const FishingLogApp = () => {
   };
 
   const getMoonPhaseName = (phase) => {
-    if (phase < 0.125) return 'New Moon';
-    if (phase < 0.25) return 'Waxing Crescent';
-    if (phase < 0.375) return 'First Quarter';
-    if (phase < 0.5) return 'Waxing Gibbous';
-    if (phase < 0.625) return 'Full Moon';
-    if (phase < 0.75) return 'Waning Gibbous';
-    if (phase < 0.875) return 'Last Quarter';
-    return 'Waning Crescent';
+    // Open-Meteo returns 0-1 where 0 = New Moon, 0.5 = Full Moon
+    if (phase < 0.0625) return 'New Moon';
+    if (phase < 0.1875) return 'Waxing Crescent';
+    if (phase < 0.3125) return 'First Quarter';
+    if (phase < 0.4375) return 'Waxing Gibbous';
+    if (phase < 0.5625) return 'Full Moon';
+    if (phase < 0.6875) return 'Waning Gibbous';
+    if (phase < 0.8125) return 'Last Quarter';
+    if (phase < 0.9375) return 'Waning Crescent';
+    return 'New Moon';
   };
 
   const getWindDirection = (degrees) => {
