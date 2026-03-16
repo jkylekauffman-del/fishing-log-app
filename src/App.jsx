@@ -324,7 +324,7 @@ const FishingLogApp = () => {
   const saveCatchToFirebase = async (catchData) => {
     if (!user) {
       setSyncStatus('⚠ Not signed in');
-      return null;
+      return 'local_' + Date.now();
     }
     try {
       initFirebase();
@@ -334,12 +334,12 @@ const FishingLogApp = () => {
         createdAt: new Date().toISOString()
       });
       setSyncStatus('✓ Synced');
-      setTimeout(() => setSyncStatus(''), 3000); // Clear status after 3 seconds
+      setTimeout(() => setSyncStatus(''), 3000);
       return docRef.id;
     } catch (error) {
       console.log('Save error:', error.code, error.message);
-      setSyncStatus('⚠ Sync failed - check connection');
-      // Try to save locally at least
+      setSyncStatus('⚠ Saved locally - will sync when online');
+      // Save locally with a local ID - it will sync when connection restored
       return 'local_' + Date.now();
     }
   };
@@ -839,7 +839,6 @@ const FishingLogApp = () => {
                             <div className="form-group"><label>Lure Name/Brand</label><input type="text" name="lureName" value={formData.lureName} onChange={handleInputChange} placeholder="e.g., Rapala" /></div>
                             <div className="form-group"><label>Type</label><input type="text" name="lureType" value={formData.lureType} onChange={handleInputChange} placeholder="e.g., Crankbait" /></div>
                             <div className="form-group"><label>Color</label><input type="text" name="lureColor" value={formData.lureColor} onChange={handleInputChange} placeholder="e.g., Chrome/Black" /></div>
-                            <div className="form-group"><label>Size</label><input type="text" name="lureSize" value={formData.lureSize} onChange={handleInputChange} placeholder="e.g., #5" /></div>
                           </div>
                         </div>
 
@@ -1010,11 +1009,11 @@ const FishingLogApp = () => {
                                   key={c.id} 
                                   position={[lat, lng]}
                                   icon={L.icon({
-                                    // Fish-shaped icon for markers
-                                    iconUrl: isSelected ? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDUwIDQwIj48ZGVmcz48ZmlsdGVyIGlkPSJnbG93Ij48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIyIiByZXN1bHQ9ImNvbG9yZWRCbHVyIi8+PC9maWx0ZXI+PC9kZWZzPjwhLS0gRmlzaCBib2R5IC0tPjxlbGxpcHNlIGN4PSIyNSIgY3k9IjIwIiByeD0iMTYiIHJ5PSIxMiIgZmlsbD0iI0ZGQjcwMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEuNSIgZmlsdGVyPSJ1cmwoI2dsb3cpIi8+PCEtLSBGaXNoIGhlYWQgLS0+PHBvbHlnb24gcG9pbnRzPSI0MSwyMCA1MCwxNSA1MCwyNSIgZmlsbD0iI0ZGQjcwMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEuNSIvPjwhLS0gRmlzaCBleWUgLS0+PGNpcmNsZSBjeD0iMzAiIGN5PSIxNyIgcj0iMiIgZmlsbD0iIzAwMCIvPjwhLS0gRmlzaCB0YWlsIChkb3JzYWwpIC0tPjxwb2x5Z29uIHBvaW50cz0iMjUsNyAyMSwxIDI5LDEiIGZpbGw9IiNGRkE1MDAiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxIi8+PCEtLSBGaXNoIHRhaWwgKHZlbnRyYWwpIC0tPjxwb2x5Z29uIHBvaW50cz0iMjUsMyMzMjAyNyw0IDI5LDMzIiBmaWxsPSIjRkZBNTAwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==' : 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDQwIDMyIj48IS0tIEZpc2ggYm9keSAtLT48ZWxsaXBzZSBjeD0iMjAiIGN5PSIxNiIgcng9IjEzIiByeT0iOSIgZmlsbD0iI0ZGNDIwMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiLz48IS0tIEZpc2ggaGVhZCAtLT48cG9seWdvbiBwb2ludHM9IjMzLDE2IDQwLDEyIDQwLDIwIiBmaWxsPSIjRkY0MjAwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMSIvPjwhLS0gRmlzaCBleWUgLS0+PGNpcmNsZSBjeD0iMjUiIGN5PSIxNCIgcj0iMS41IiBmaWxsPSIjMDAwIi8+PCEtLSBEb3JzYWwgZmlubCAtLT48cG9seWdvbiBwb2ludHM9IjIwLDcgMTgsMSAyMiwxIiBmaWxsPSIjRkY1NzAwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMC41Ii8+PCEtLSBWZW50cmFsIGZpbm4gLS0+PHBvbHlnb24gcG9pbnRzPSIyMCwyNSAxOCwzMSAyMiwzMSIgZmlsbD0iI0ZGNTcwMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjAuNSIvPjwvc3ZnPg==',
-                                    iconSize: isSelected ? [50, 40] : [40, 32],
-                                    iconAnchor: isSelected ? [25, 20] : [20, 16],
-                                    popupAnchor: isSelected ? [0, -20] : [0, -16],
+                                    // Simple circle icon for markers
+                                    iconUrl: isSelected ? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDQwIDQwIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIxOCIgZmlsbD0iI0ZGQjcwMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=' : 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgdmlld0JveD0iMCAwIDMwIDMwIj48Y2lyY2xlIGN4PSIxNSIgY3k9IjE1IiByPSIxMyIgZmlsbD0iI0ZGNDIwMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEuNSIvPjwvc3ZnPg==',
+                                    iconSize: isSelected ? [40, 40] : [30, 30],
+                                    iconAnchor: isSelected ? [20, 20] : [15, 15],
+                                    popupAnchor: isSelected ? [0, -20] : [0, -15],
                                     shadowSize: [30, 30],
                                     shadowAnchor: [10, 30]
                                   })}
