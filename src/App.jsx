@@ -1266,193 +1266,193 @@ const FishingLogApp = () => {
             </div>
           </>
         )}
+
+        {/* Full Catch Details Modal */}
+        {selectedCatchDetails && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '2rem'
+          }}>
+            <div style={{
+              background: '#0f4c27',
+              borderRadius: '12px',
+              maxWidth: '800px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              width: '100%',
+              border: '2px solid #2ecc71',
+              padding: '2rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2 style={{ color: '#2ecc71', margin: 0 }}>🎣 {selectedCatchDetails.fishSpecies}</h2>
+                <button
+                  onClick={() => setSelectedCatchDetails(null)}
+                  style={{
+                    background: '#FF4200',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '40px',
+                    height: '40px',
+                    fontSize: '1.5rem',
+                    cursor: 'pointer',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Images */}
+              {(selectedCatchDetails.fishImage || selectedCatchDetails.lureImage) && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                  {selectedCatchDetails.fishImage && (
+                    <div style={{ borderRadius: '8px', overflow: 'hidden', border: '2px solid #2ecc71' }}>
+                      <img src={selectedCatchDetails.fishImage} alt="Fish" style={{ width: '100%', height: 'auto' }} />
+                    </div>
+                  )}
+                  {selectedCatchDetails.lureImage && (
+                    <div style={{ borderRadius: '8px', overflow: 'hidden', border: '2px solid #2ecc71' }}>
+                      <img src={selectedCatchDetails.lureImage} alt="Lure" style={{ width: '100%', height: 'auto' }} />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Details Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Weight</div>
+                  <div style={{ color: '#2ecc71', fontSize: '1.3rem', fontWeight: 'bold' }}>{selectedCatchDetails.weight || '—'} lbs</div>
+                </div>
+                <div>
+                  <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Length</div>
+                  <div style={{ color: '#2ecc71', fontSize: '1.3rem', fontWeight: 'bold' }}>{selectedCatchDetails.length || '—'} in</div>
+                </div>
+                <div>
+                  <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Date & Time</div>
+                  <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.date} {selectedCatchDetails.time}</div>
+                </div>
+                <div>
+                  <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Location</div>
+                  <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{parseFloat(selectedCatchDetails.latitude)?.toFixed(4)}, {parseFloat(selectedCatchDetails.longitude)?.toFixed(4)}</div>
+                </div>
+                {selectedCatchDetails.lureName && (
+                  <div>
+                    <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Lure Name</div>
+                    <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.lureName}</div>
+                  </div>
+                )}
+                {selectedCatchDetails.lureType && (
+                  <div>
+                    <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Lure Type</div>
+                    <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.lureType}</div>
+                  </div>
+                )}
+                {selectedCatchDetails.lureColor && (
+                  <div>
+                    <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Lure Color</div>
+                    <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.lureColor}</div>
+                  </div>
+                )}
+                {selectedCatchDetails.waterTemp && (
+                  <div>
+                    <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Water Temp</div>
+                    <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.waterTemp}°F</div>
+                  </div>
+                )}
+                {selectedCatchDetails.depth && (
+                  <div>
+                    <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Depth</div>
+                    <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.depth} ft</div>
+                  </div>
+                )}
+                {selectedCatchDetails.weatherTemp && (
+                  <div>
+                    <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Air Temp</div>
+                    <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.weatherTemp}°F</div>
+                  </div>
+                )}
+                {selectedCatchDetails.windSpeed && (
+                  <div>
+                    <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Wind</div>
+                    <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.windSpeed} mph {selectedCatchDetails.windDirection}</div>
+                  </div>
+                )}
+                {selectedCatchDetails.coverType && (
+                  <div>
+                    <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Cover Type</div>
+                    <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.coverType}</div>
+                  </div>
+                )}
+                {selectedCatchDetails.moonPhase && (
+                  <div>
+                    <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Moon Phase</div>
+                    <div style={{ color: '#fef5e7', fontSize: '1rem' }}>🌙 {selectedCatchDetails.moonPhase}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Notes */}
+              {selectedCatchDetails.notes && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Notes</div>
+                  <div style={{ color: '#fef5e7', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '6px' }}>
+                    {selectedCatchDetails.notes}
+                  </div>
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button
+                  onClick={() => {
+                    setSelectedCatchForMap(selectedCatchDetails);
+                    setActiveTab('map');
+                    setSelectedCatchDetails(null);
+                  }}
+                  style={{
+                    padding: '10px 20px',
+                    background: '#2ecc71',
+                    color: '#0f4c27',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontSize: '1rem'
+                  }}
+                >
+                  🗺️ View on Map
+                </button>
+                <button
+                  onClick={() => setSelectedCatchDetails(null)}
+                  style={{
+                    padding: '10px 20px',
+                    background: '#3498db',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    fontSize: '1rem'
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
-
-    {/* Full Catch Details Modal */}
-    {selectedCatchDetails && (
-      <div style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.9)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        padding: '2rem'
-      }}>
-        <div style={{
-          background: '#0f4c27',
-          borderRadius: '12px',
-          maxWidth: '800px',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          width: '100%',
-          border: '2px solid #2ecc71',
-          padding: '2rem'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <h2 style={{ color: '#2ecc71', margin: 0 }}>🎣 {selectedCatchDetails.fishSpecies}</h2>
-            <button
-              onClick={() => setSelectedCatchDetails(null)}
-              style={{
-                background: '#FF4200',
-                color: 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                fontSize: '1.5rem',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Images */}
-          {(selectedCatchDetails.fishImage || selectedCatchDetails.lureImage) && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-              {selectedCatchDetails.fishImage && (
-                <div style={{ borderRadius: '8px', overflow: 'hidden', border: '2px solid #2ecc71' }}>
-                  <img src={selectedCatchDetails.fishImage} alt="Fish" style={{ width: '100%', height: 'auto' }} />
-                </div>
-              )}
-              {selectedCatchDetails.lureImage && (
-                <div style={{ borderRadius: '8px', overflow: 'hidden', border: '2px solid #2ecc71' }}>
-                  <img src={selectedCatchDetails.lureImage} alt="Lure" style={{ width: '100%', height: 'auto' }} />
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Details Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-            <div>
-              <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Weight</div>
-              <div style={{ color: '#2ecc71', fontSize: '1.3rem', fontWeight: 'bold' }}>{selectedCatchDetails.weight || '—'} lbs</div>
-            </div>
-            <div>
-              <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Length</div>
-              <div style={{ color: '#2ecc71', fontSize: '1.3rem', fontWeight: 'bold' }}>{selectedCatchDetails.length || '—'} in</div>
-            </div>
-            <div>
-              <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Date & Time</div>
-              <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.date} {selectedCatchDetails.time}</div>
-            </div>
-            <div>
-              <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Location</div>
-              <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{parseFloat(selectedCatchDetails.latitude)?.toFixed(4)}, {parseFloat(selectedCatchDetails.longitude)?.toFixed(4)}</div>
-            </div>
-            {selectedCatchDetails.lureName && (
-              <div>
-                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Lure Name</div>
-                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.lureName}</div>
-              </div>
-            )}
-            {selectedCatchDetails.lureType && (
-              <div>
-                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Lure Type</div>
-                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.lureType}</div>
-              </div>
-            )}
-            {selectedCatchDetails.lureColor && (
-              <div>
-                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Lure Color</div>
-                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.lureColor}</div>
-              </div>
-            )}
-            {selectedCatchDetails.waterTemp && (
-              <div>
-                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Water Temp</div>
-                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.waterTemp}°F</div>
-              </div>
-            )}
-            {selectedCatchDetails.depth && (
-              <div>
-                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Depth</div>
-                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.depth} ft</div>
-              </div>
-            )}
-            {selectedCatchDetails.weatherTemp && (
-              <div>
-                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Air Temp</div>
-                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.weatherTemp}°F</div>
-              </div>
-            )}
-            {selectedCatchDetails.windSpeed && (
-              <div>
-                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Wind</div>
-                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.windSpeed} mph {selectedCatchDetails.windDirection}</div>
-              </div>
-            )}
-            {selectedCatchDetails.coverType && (
-              <div>
-                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Cover Type</div>
-                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.coverType}</div>
-              </div>
-            )}
-            {selectedCatchDetails.moonPhase && (
-              <div>
-                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Moon Phase</div>
-                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>🌙 {selectedCatchDetails.moonPhase}</div>
-              </div>
-            )}
-          </div>
-
-          {/* Notes */}
-          {selectedCatchDetails.notes && (
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Notes</div>
-              <div style={{ color: '#fef5e7', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '6px' }}>
-                {selectedCatchDetails.notes}
-              </div>
-            </div>
-          )}
-
-          {/* Buttons */}
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-            <button
-              onClick={() => {
-                setSelectedCatchForMap(selectedCatchDetails);
-                setActiveTab('map');
-                setSelectedCatchDetails(null);
-              }}
-              style={{
-                padding: '10px 20px',
-                background: '#2ecc71',
-                color: '#0f4c27',
-                border: 'none',
-                borderRadius: '6px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                fontSize: '1rem'
-              }}
-            >
-              🗺️ View on Map
-            </button>
-            <button
-              onClick={() => setSelectedCatchDetails(null)}
-              style={{
-                padding: '10px 20px',
-                background: '#3498db',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                fontSize: '1rem'
-              }}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-    )}
 
 export default FishingLogApp;
