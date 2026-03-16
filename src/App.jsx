@@ -982,7 +982,10 @@ const FishingLogApp = () => {
                                       border: '2px solid #2ecc71',
                                       marginTop: '0.5rem',
                                       position: 'relative',
-                                      backgroundColor: '#1a1a1a'
+                                      backgroundColor: '#1a1a1a',
+                                      backgroundImage: `url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/${Math.floor((parseFloat(c.longitude) + 180) / 0.703125)}/0')`,
+                                      backgroundSize: 'cover',
+                                      backgroundPosition: 'center'
                                     }}
                                   >
                                     <div style={{
@@ -992,20 +995,9 @@ const FishingLogApp = () => {
                                       transform: 'translate(-50%, -50%)',
                                       zIndex: 10,
                                       color: '#FF4200',
-                                      fontSize: '2rem'
+                                      fontSize: '2rem',
+                                      textShadow: '0 0 10px rgba(0,0,0,0.8)'
                                     }}>📍</div>
-                                    <img 
-                                      src={`https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${parseFloat(c.longitude)},${parseFloat(c.latitude)},13,0,0/400x200@2x?access_token=pk.eyJ1IjoiZmlzaGluZ2xvZyIsImEiOiJjbTVwczd6eHowMDAwMnBwOHk5YWw3aHQyIn0.test`}
-                                      alt="Catch location"
-                                      style={{
-                                        width: '100%',
-                                        height: '100%',
-                                        objectFit: 'cover'
-                                      }}
-                                      onError={(e) => {
-                                        e.target.src = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Crect fill='%23333' width='400' height='200'/%3E%3Ctext x='50%25' y='50%25' fill='%23999' text-anchor='middle' dy='.3em' font-size='16'%3EMap unavailable%3C/text%3E%3C/svg%3E`;
-                                      }}
-                                    />
                                     <div style={{
                                       position: 'absolute',
                                       bottom: '10px',
@@ -1078,11 +1070,11 @@ const FishingLogApp = () => {
                               attribution='&copy; Esri'
                             />
                             
-                            {/* USGS Topographic/Contour overlay */}
+                            {/* Bathymetric contours - shows water depth and terrain */}
                             {showContours && (
                               <TileLayer
-                                url="https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}"
-                                attribution='USGS'
+                                url="https://tiles.gebco.net/gebco_latest/gebco_latest/{z}/{x}/{y}.png"
+                                attribution='GEBCO 2023'
                                 opacity={0.5}
                               />
                             )}
