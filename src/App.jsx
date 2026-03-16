@@ -50,6 +50,7 @@ const FishingLogApp = () => {
   const [user, setUser] = useState(null);
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
+  const [mapView, setMapView] = useState('street');
   
   const [formData, setFormData] = useState({
     fishImage: null,
@@ -165,17 +166,21 @@ const FishingLogApp = () => {
       const data = await response.json();
       console.log('Weather API Response:', data);
       
-      // Fetch moon phase separately with correct format
+      // Fetch moon phase with correct format - daily endpoint
       let moonPhase = 0;
       try {
         const moonResponse = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=moon_phase&timezone=auto&forecast_days=1`
+          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=moon_phase&timezone=auto`
         );
         const moonData = await moonResponse.json();
         console.log('Moon API Response:', moonData);
-        // Open-Meteo returns moon_phase as 0-1, get today's value
-        moonPhase = moonData.daily?.moon_phase?.[0];
-        console.log('Raw Moon Phase Value:', moonPhase);
+        // Get today's moon phase (first value in daily array)
+        if (moonData.daily && moonData.daily.moon_phase && moonData.daily.moon_phase.length > 0) {
+          moonPhase = moonData.daily.moon_phase[0];
+          console.log('Raw Moon Phase Value:', moonPhase);
+        } else {
+          console.log('No moon phase data in response');
+        }
       } catch (e) {
         console.log('Moon phase fetch error:', e);
       }
@@ -183,7 +188,7 @@ const FishingLogApp = () => {
       if (data.current) {
         const temp = Math.round(data.current.temperature_2m * 9/5 + 32);
         const windDir = getWindDirection(data.current.wind_direction_10m);
-        const moonPhaseName = getMoonPhaseName(moonPhase || 0);
+        const moonPhaseName = getMoonPhaseName(moonPhase);
         
         console.log('Processed Weather Data:', {
           temperature: temp,
@@ -886,77 +891,106 @@ const FishingLogApp = () => {
                     </div>
 
                     {catches.length > 0 ? (
-                      <div style={{ width: '100%', height: '600px', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
-                        <MapContainer 
-                          center={[parseFloat(catches[0].latitude) || 30.2672, parseFloat(catches[0].longitude) || -97.7431]} 
-                          zoom={13} 
-                          style={{ height: '100%', width: '100%' }}
-                        >
-                          <TileLayer
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                          />
-                          {catches.map((c, idx) => {
-                            const lat = parseFloat(c.latitude);
-                            const lng = parseFloat(c.longitude);
-                            if (!lat || !lng) return null;
-                            
-                            return (
-                              <Marker 
-                                key={c.id} 
-                                position={[lat, lng]}
-                                icon={L.icon({
-                                  iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDMyIDQwIj48Y2lyY2xlIGN4PSIxNiIgY3k9IjEwIiByPSI4IiBmaWxsPSIjMmVjYzcxIi8+PHBhdGggZD0iTSAxNiAyMCBDIDEwIDI1IDUgMzAgNSAzNSBDIDUgMzcgMTAgNDAgMTYgNDAgQyAyMiA0MCAxNiAzNyAxNiAzNSBDIDMwIDMwIDIyIDI1IDE2IDIwIiBmaWxsPSIjMjdhZTYwIi8+PC9zdmc+',
-                                  iconSize: [32, 40],
-                                  iconAnchor: [16, 40],
-                                  popupAnchor: [0, -40]
-                                })}
-                              >
-                                <Popup>
-                                  <div style={{ fontSize: '12px', width: '200px' }}>
-                                    <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#2ecc71' }}>
-                                      {c.fishSpecies || 'Unknown'} - {c.weight || 'N/A'} lbs
+                      <>
+                        <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                          <button 
+                            className={`btn-secondary ${activeTab === 'map' && typeof mapView !== 'undefined' && mapView === 'street' ? 'active' : ''}`}
+                            onClick={() => setMapView('street')}
+                            style={{ background: mapView === 'street' ? '#2ecc71' : '#3498db' }}
+                          >
+                            🗺️ Street Map
+                          </button>
+                          <button 
+                            className={`btn-secondary ${activeTab === 'map' && typeof mapView !== 'undefined' && mapView === 'satellite' ? 'active' : ''}`}
+                            onClick={() => setMapView('satellite')}
+                            style={{ background: mapView === 'satellite' ? '#2ecc71' : '#3498db' }}
+                          >
+                            🛰️ Satellite View
+                          </button>
+                        </div>
+
+                        <div style={{ width: '100%', height: '600px', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
+                          <MapContainer 
+                            center={[parseFloat(catches[0].latitude) || 30.2672, parseFloat(catches[0].longitude) || -97.7431]} 
+                            zoom={13} 
+                            style={{ height: '100%', width: '100%' }}
+                          >
+                            {mapView === 'satellite' ? (
+                              <TileLayer
+                                url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+                                attribution='&copy; Esri'
+                              />
+                            ) : (
+                              <TileLayer
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                              />
+                            )}
+                            {catches.map((c, idx) => {
+                              const lat = parseFloat(c.latitude);
+                              const lng = parseFloat(c.longitude);
+                              if (!lat || !lng) return null;
+                              
+                              return (
+                                <Marker 
+                                  key={c.id} 
+                                  position={[lat, lng]}
+                                  icon={L.icon({
+                                    // Bright red/orange fish icon with black outline for maximum visibility
+                                    iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDQwIDUwIj48ZGVmcz48ZmlsdGVyIGlkPSJzaGFkb3ciPjxmZU9mZnNldCBkdj0iMiIgZmxvb2Rpbj0iIWluaXRpYWwiLz48ZmVDb21wb25lbnRUcmFuc2Zlcj48ZmVGdW5jQSB0eXBlPSJsaW5lYXIiIHRhYmxlVmFsdWVzPSIwIDAuNyIvPjwvZmVDb21wb25lbnRUcmFuc2Zlcj48L2ZpbHRlcj48L2RlZnM+PGNpcmNsZSBjeD0iMjAiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiNGRjQyMDAiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTSAyMCAyNCBDIDEyIDMwIDYgMzUgNiA0MCBDIDYgNDMgMTIgNDggMjAgNDggQyAyOCA0OCAzNCA0MyAzNCA0MCBDIDM0IDM1IDI4IDMwIDIwIDI0IiBmaWxsPSIjRkY1NzAwIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==',
+                                    iconSize: [40, 50],
+                                    iconAnchor: [20, 50],
+                                    popupAnchor: [0, -50],
+                                    shadowSize: [40, 40],
+                                    shadowAnchor: [12, 40]
+                                  })}
+                                >
+                                  <Popup>
+                                    <div style={{ fontSize: '12px', width: '200px' }}>
+                                      <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#FF4200' }}>
+                                        🎣 {c.fishSpecies || 'Unknown'} - {c.weight || 'N/A'} lbs
+                                      </div>
+                                      <div style={{ marginBottom: '6px' }}>
+                                        <strong>Date:</strong> {c.date} {c.time}
+                                      </div>
+                                      {c.lureColor && c.lureName && (
+                                        <div style={{ marginBottom: '6px' }}>
+                                          <strong>Lure:</strong> {c.lureName} ({c.lureColor})
+                                        </div>
+                                      )}
+                                      {c.waterTemp && (
+                                        <div style={{ marginBottom: '6px' }}>
+                                          <strong>Water Temp:</strong> {c.waterTemp}°F
+                                        </div>
+                                      )}
+                                      {c.depth && (
+                                        <div style={{ marginBottom: '6px' }}>
+                                          <strong>Depth:</strong> {c.depth} ft
+                                        </div>
+                                      )}
+                                      {c.weatherTemp && (
+                                        <div style={{ marginBottom: '6px' }}>
+                                          <strong>Air Temp:</strong> {c.weatherTemp}°F
+                                        </div>
+                                      )}
+                                      {c.moonPhase && (
+                                        <div style={{ marginBottom: '6px' }}>
+                                          <strong>Moon:</strong> 🌙 {c.moonPhase}
+                                        </div>
+                                      )}
+                                      {c.coverType && (
+                                        <div>
+                                          <strong>Cover:</strong> {c.coverType}
+                                        </div>
+                                      )}
                                     </div>
-                                    <div style={{ marginBottom: '6px' }}>
-                                      <strong>Date:</strong> {c.date} {c.time}
-                                    </div>
-                                    {c.lureColor && c.lureName && (
-                                      <div style={{ marginBottom: '6px' }}>
-                                        <strong>Lure:</strong> {c.lureName} ({c.lureColor})
-                                      </div>
-                                    )}
-                                    {c.waterTemp && (
-                                      <div style={{ marginBottom: '6px' }}>
-                                        <strong>Water Temp:</strong> {c.waterTemp}°F
-                                      </div>
-                                    )}
-                                    {c.depth && (
-                                      <div style={{ marginBottom: '6px' }}>
-                                        <strong>Depth:</strong> {c.depth} ft
-                                      </div>
-                                    )}
-                                    {c.weatherTemp && (
-                                      <div style={{ marginBottom: '6px' }}>
-                                        <strong>Air Temp:</strong> {c.weatherTemp}°F
-                                      </div>
-                                    )}
-                                    {c.moonPhase && (
-                                      <div style={{ marginBottom: '6px' }}>
-                                        <strong>Moon:</strong> 🌙 {c.moonPhase}
-                                      </div>
-                                    )}
-                                    {c.coverType && (
-                                      <div>
-                                        <strong>Cover:</strong> {c.coverType}
-                                      </div>
-                                    )}
-                                  </div>
-                                </Popup>
-                              </Marker>
-                            );
-                          })}
-                        </MapContainer>
-                      </div>
+                                  </Popup>
+                                </Marker>
+                              );
+                            })}
+                          </MapContainer>
+                        </div>
+                      </>
                     ) : (
                       <div className="no-catches"><p>No catches logged yet. Log your first catch to see it on the map!</p></div>
                     )}
