@@ -51,7 +51,6 @@ const FishingLogApp = () => {
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
   const [selectedCatchForMap, setSelectedCatchForMap] = useState(null);
-  const [showContours, setShowContours] = useState(false);
   const mapRef = useRef(null);
   
   const [formData, setFormData] = useState({
@@ -983,7 +982,7 @@ const FishingLogApp = () => {
                                       marginTop: '0.5rem',
                                       position: 'relative',
                                       backgroundColor: '#1a1a1a',
-                                      backgroundImage: `url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/${Math.floor((parseFloat(c.longitude) + 180) / 0.703125)}/0')`,
+                                      backgroundImage: `url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/1904/3364.png')`,
                                       backgroundSize: 'cover',
                                       backgroundPosition: 'center'
                                     }}
@@ -1042,18 +1041,11 @@ const FishingLogApp = () => {
                       <>
                         <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
                           <button 
-                            className={`btn-secondary ${!showContours ? 'active' : ''}`}
-                            onClick={() => setShowContours(false)}
-                            style={{ background: !showContours ? '#2ecc71' : '#3498db' }}
+                            className="btn-secondary"
+                            onClick={() => setActiveTab('map')}
+                            style={{ background: '#2ecc71' }}
                           >
-                            🛰️ Satellite Only
-                          </button>
-                          <button 
-                            className={`btn-secondary ${showContours ? 'active' : ''}`}
-                            onClick={() => setShowContours(true)}
-                            style={{ background: showContours ? '#2ecc71' : '#3498db' }}
-                          >
-                            📊 Satellite + Contours
+                            🛰️ Satellite + Labels
                           </button>
                         </div>
 
@@ -1070,14 +1062,19 @@ const FishingLogApp = () => {
                               attribution='&copy; Esri'
                             />
                             
-                            {/* Bathymetric contours - shows water depth and terrain */}
-                            {showContours && (
-                              <TileLayer
-                                url="https://tiles.gebco.net/gebco_latest/gebco_latest/{z}/{x}/{y}.png"
-                                attribution='GEBCO 2023'
-                                opacity={0.5}
-                              />
-                            )}
+                            {/* Labels and boundaries overlay */}
+                            <TileLayer
+                              url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
+                              attribution='&copy; Esri'
+                              opacity={0.7}
+                            />
+                            
+                            {/* NOAA Bathymetric/Nautical Charts overlay - shows water depth contours */}
+                            <TileLayer
+                              url="https://tileservice.charts.noaa.gov/tiles/raster/mux/{z}/{x}/{y}.png"
+                              attribution='&copy; NOAA'
+                              opacity={0.4}
+                            />
                             {catches.map((c, idx) => {
                               const lat = parseFloat(c.latitude);
                               const lng = parseFloat(c.longitude);
@@ -1089,13 +1086,13 @@ const FishingLogApp = () => {
                                   key={c.id} 
                                   position={[lat, lng]}
                                   icon={L.icon({
-                                    // Use larger, brighter icon for selected catch
-                                    iconUrl: isSelected ? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI2MCIgaGVpZ2h0PSI3MCIgdmlld0JveD0iMCAwIDYwIDcwIj48ZGVmcz48ZmlsdGVyIGlkPSJnbG93Ij48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIyIiByZXN1bHQ9ImNvbG9yZWRCbHVyIi8+PC9maWx0ZXI+PC9kZWZzPjxjaXJjbGUgY3g9IjMwIiBjeT0iMTgiIHI9IjE0IiBmaWxsPSIjRkZGRjAwIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMyIgZmlsdGVyPSJ1cmwoI2dsb3cpIi8+PHBhdGggZD0iTSAzMCAzNiBDIDE4IDQ0IDggNTAgOCA1OCBDIDGGOTY1IDE4IDcwIDMwIDcwIEMgNDIgNzAgNTIgNjUgNTIgNTggQyA1MiA1MCA0MiA0NCAzMCAzNiIgZmlsbD0iI0ZGQjcwMCIgc3Ryb2tlPSIjMDAwMDAwIiBzdHJva2Utd2lkdGg9IjMiIGZpbHRlcj0idXJsKCNnbG93KSIvPjwvc3ZnPg==' : 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI1MCIgdmlld0JveD0iMCAwIDQwIDUwIj48ZGVmcz48ZmlsdGVyIGlkPSJzaGFkb3ciPjxmZU9mZnNldCBkdj0iMiIgZmxvb2Rpbj0iIWluaXRpYWwiLz48ZmVDb21wb25lbnRUcmFuc2Zlcj48ZmVGdW5jQSB0eXBlPSJsaW5lYXIiIHRhYmxlVmFsdWVzPSIwIDAuNyIvPjwvZmVDb21wb25lbnRUcmFuc2Zlcj48L2ZpbHRlcj48L2RlZnM+PGNpcmNsZSBjeD0iMjAiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiNGRjQyMDAiIHN0cm9rZT0iIzAwMDAwMCIgc3Ryb2tlLXdpZHRoPSIyIi8+PHBhdGggZD0iTSAyMCAyNCBDIDEyIDMwIDYgMzUgNiA0MCBDIDYgNDMgMTIgNDggMjAgNDggQyAyOCA0OCAzNCA0MyAzNCA0MCBDIDM0IDM1IDI4IDMwIDIwIDI0IiBmaWxsPSIjRkY1NzAwIiBzdHJva2U9IiMwMDAwMDAiIHN0cm9rZS13aWR0aD0iMiIvPjwvc3ZnPg==',
-                                    iconSize: isSelected ? [60, 70] : [40, 50],
-                                    iconAnchor: isSelected ? [30, 70] : [20, 50],
-                                    popupAnchor: isSelected ? [0, -70] : [0, -50],
-                                    shadowSize: [40, 40],
-                                    shadowAnchor: [12, 40]
+                                    // Fish-shaped icon for markers
+                                    iconUrl: isSelected ? 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI1MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDUwIDQwIj48ZGVmcz48ZmlsdGVyIGlkPSJnbG93Ij48ZmVHYXVzc2lhbkJsdXIgc3RkRGV2aWF0aW9uPSIyIiByZXN1bHQ9ImNvbG9yZWRCbHVyIi8+PC9maWx0ZXI+PC9kZWZzPjwhLS0gRmlzaCBib2R5IC0tPjxlbGxpcHNlIGN4PSIyNSIgY3k9IjIwIiByeD0iMTYiIHJ5PSIxMiIgZmlsbD0iI0ZGQjcwMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEuNSIgZmlsdGVyPSJ1cmwoI2dsb3cpIi8+PCEtLSBGaXNoIGhlYWQgLS0+PHBvbHlnb24gcG9pbnRzPSI0MSwyMCA1MCwxNSA1MCwyNSIgZmlsbD0iI0ZGQjcwMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEuNSIvPjwhLS0gRmlzaCBleWUgLS0+PGNpcmNsZSBjeD0iMzAiIGN5PSIxNyIgcj0iMiIgZmlsbD0iIzAwMCIvPjwhLS0gRmlzaCB0YWlsIChkb3JzYWwpIC0tPjxwb2x5Z29uIHBvaW50cz0iMjUsNyAyMSwxIDI5LDEiIGZpbGw9IiNGRkE1MDAiIHN0cm9rZT0iIzAwMCIgc3Ryb2tlLXdpZHRoPSIxIi8+PCEtLSBGaXNoIHRhaWwgKHZlbnRyYWwpIC0tPjxwb2x5Z29uIHBvaW50cz0iMjUsMyMzMjAyNyw0IDI5LDMzIiBmaWxsPSIjRkZBNTAwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMSIvPjwvc3ZnPg==' : 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDQwIDMyIj48IS0tIEZpc2ggYm9keSAtLT48ZWxsaXBzZSBjeD0iMjAiIGN5PSIxNiIgcng9IjEzIiByeT0iOSIgZmlsbD0iI0ZGNDIwMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiLz48IS0tIEZpc2ggaGVhZCAtLT48cG9seWdvbiBwb2ludHM9IjMzLDE2IDQwLDEyIDQwLDIwIiBmaWxsPSIjRkY0MjAwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMSIvPjwhLS0gRmlzaCBleWUgLS0+PGNpcmNsZSBjeD0iMjUiIGN5PSIxNCIgcj0iMS41IiBmaWxsPSIjMDAwIi8+PCEtLSBEb3JzYWwgZmlubCAtLT48cG9seWdvbiBwb2ludHM9IjIwLDcgMTgsMSAyMiwxIiBmaWxsPSIjRkY1NzAwIiBzdHJva2U9IiMwMDAiIHN0cm9rZS13aWR0aD0iMC41Ii8+PCEtLSBWZW50cmFsIGZpbm4gLS0+PHBvbHlnb24gcG9pbnRzPSIyMCwyNSAxOCwzMSAyMiwzMSIgZmlsbD0iI0ZGNTcwMCIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjAuNSIvPjwvc3ZnPg==',
+                                    iconSize: isSelected ? [50, 40] : [40, 32],
+                                    iconAnchor: isSelected ? [25, 20] : [20, 16],
+                                    popupAnchor: isSelected ? [0, -20] : [0, -16],
+                                    shadowSize: [30, 30],
+                                    shadowAnchor: [10, 30]
                                   })}
                                 >
                                   <Popup>
