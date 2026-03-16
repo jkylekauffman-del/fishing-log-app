@@ -970,101 +970,149 @@ const FishingLogApp = () => {
                       </div>
                     )}
 
-                    {/* Catch Log Form and List */}
+                    {/* Catch Log Form Modal */}
                     {showForm && (
-                      <form onSubmit={handleSubmit} className="form-container">
-                        <div className="form-section">
-                          <div className="section-title"><Camera size={20} /> Fish & Lure Photos</div>
-                          <div className="form-grid">
-                            <div className="form-group">
-                              <label>Fish Photo</label>
-                              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'fishImage')} />
-                              {formData.fishImage && <div className="image-preview"><img src={formData.fishImage} alt="Fish" /></div>}
+                      <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: 'rgba(0, 0, 0, 0.7)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 2000,
+                        padding: '2rem'
+                      }}>
+                        <div style={{
+                          background: 'linear-gradient(135deg, #0f4c27 0%, #1a5c3a 50%, #0d3d20 100%)',
+                          borderRadius: '16px',
+                          maxWidth: '900px',
+                          maxHeight: '90vh',
+                          overflowY: 'auto',
+                          width: '100%',
+                          border: '3px solid #2ecc71',
+                          padding: '2rem',
+                          boxShadow: '0 10px 50px rgba(0,0,0,0.5)'
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h2 style={{ color: '#2ecc71', margin: 0, fontSize: '1.8rem' }}>📝 Log a New Catch</h2>
+                            <button
+                              onClick={() => setShowForm(false)}
+                              style={{
+                                background: '#FF4200',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '50%',
+                                width: '40px',
+                                height: '40px',
+                                fontSize: '1.5rem',
+                                cursor: 'pointer',
+                                fontWeight: 'bold'
+                              }}
+                            >
+                              ✕
+                            </button>
+                          </div>
+
+                          <form onSubmit={handleSubmit} style={{ display: 'contents' }}>
+                            <div className="form-section">
+                              <div className="section-title"><Camera size={20} /> Fish & Lure Photos</div>
+                              <div className="form-grid">
+                                <div className="form-group">
+                                  <label>Fish Photo</label>
+                                  <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'fishImage')} />
+                                  {formData.fishImage && <div className="image-preview"><img src={formData.fishImage} alt="Fish" /></div>}
+                                </div>
+                                <div className="form-group">
+                                  <label>Lure Photo</label>
+                                  <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'lureImage')} />
+                                  {formData.lureImage && <div className="image-preview"><img src={formData.lureImage} alt="Lure" /></div>}
+                                </div>
+                              </div>
                             </div>
-                            <div className="form-group">
-                              <label>Lure Photo</label>
-                              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e, 'lureImage')} />
-                              {formData.lureImage && <div className="image-preview"><img src={formData.lureImage} alt="Lure" /></div>}
+
+                            <div className="form-section">
+                              <div className="section-title"><Droplets size={20} /> Fish Details</div>
+                              <div className="form-grid">
+                                <div className="form-group"><label>Species</label><input type="text" name="fishSpecies" value={formData.fishSpecies} onChange={handleInputChange} placeholder="e.g., Largemouth Bass" /></div>
+                                <div className="form-group"><label>Weight (lbs)</label><input type="number" name="weight" value={formData.weight} onChange={handleInputChange} placeholder="e.g., 4.5" step="0.1" /></div>
+                                <div className="form-group"><label>Length (inches)</label><input type="number" name="length" value={formData.length} onChange={handleInputChange} placeholder="e.g., 16.5" step="0.1" /></div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
 
-                        <div className="form-section">
-                          <div className="section-title"><Droplets size={20} /> Fish Details</div>
-                          <div className="form-grid">
-                            <div className="form-group"><label>Species</label><input type="text" name="fishSpecies" value={formData.fishSpecies} onChange={handleInputChange} placeholder="e.g., Largemouth Bass" /></div>
-                            <div className="form-group"><label>Weight (lbs)</label><input type="number" name="weight" value={formData.weight} onChange={handleInputChange} placeholder="e.g., 4.5" step="0.1" /></div>
-                            <div className="form-group"><label>Length (inches)</label><input type="number" name="length" value={formData.length} onChange={handleInputChange} placeholder="e.g., 16.5" step="0.1" /></div>
-                          </div>
-                        </div>
+                            <div className="form-section">
+                              <div className="section-title"><MapPin size={20} /> Lure Information</div>
+                              <div className="form-grid">
+                                <div className="form-group"><label>Lure Name/Brand</label><input type="text" name="lureName" value={formData.lureName} onChange={handleInputChange} placeholder="e.g., Rapala" /></div>
+                                <div className="form-group"><label>Type</label><input type="text" name="lureType" value={formData.lureType} onChange={handleInputChange} placeholder="e.g., Crankbait" /></div>
+                                <div className="form-group"><label>Color</label><input type="text" name="lureColor" value={formData.lureColor} onChange={handleInputChange} placeholder="e.g., Chrome/Black" /></div>
+                              </div>
+                            </div>
 
-                        <div className="form-section">
-                          <div className="section-title"><MapPin size={20} /> Lure Information</div>
-                          <div className="form-grid">
-                            <div className="form-group"><label>Lure Name/Brand</label><input type="text" name="lureName" value={formData.lureName} onChange={handleInputChange} placeholder="e.g., Rapala" /></div>
-                            <div className="form-group"><label>Type</label><input type="text" name="lureType" value={formData.lureType} onChange={handleInputChange} placeholder="e.g., Crankbait" /></div>
-                            <div className="form-group"><label>Color</label><input type="text" name="lureColor" value={formData.lureColor} onChange={handleInputChange} placeholder="e.g., Chrome/Black" /></div>
-                          </div>
-                        </div>
+                            <div className="form-section">
+                              <div className="section-title"><Clock size={20} /> Date & Time</div>
+                              <div className="form-grid">
+                                <div className="form-group"><label>Date</label><input type="date" name="date" value={formData.date} onChange={handleInputChange} /></div>
+                                <div className="form-group"><label>Time</label><input type="time" name="time" value={formData.time} onChange={handleInputChange} /></div>
+                              </div>
+                            </div>
 
-                        <div className="form-section">
-                          <div className="section-title"><Clock size={20} /> Date & Time</div>
-                          <div className="form-grid">
-                            <div className="form-group"><label>Date</label><input type="date" name="date" value={formData.date} onChange={handleInputChange} /></div>
-                            <div className="form-group"><label>Time</label><input type="time" name="time" value={formData.time} onChange={handleInputChange} /></div>
-                          </div>
-                        </div>
+                            <div className="form-section">
+                              <div className="section-title"><MapPin size={20} /> Location & Depth</div>
+                              <div className="form-grid">
+                                <div className="form-group"><label>Latitude</label><input type="number" name="latitude" value={formData.latitude} onChange={handleInputChange} step="0.00001" placeholder="Auto-populated (editable)" /></div>
+                                <div className="form-group"><label>Longitude</label><input type="number" name="longitude" value={formData.longitude} onChange={handleInputChange} step="0.00001" placeholder="Auto-populated (editable)" /></div>
+                                <div className="form-group"><label>Water Depth (ft)</label><input type="number" name="depth" value={formData.depth} onChange={handleInputChange} step="0.5" /></div>
+                                <div className="form-group"><label>Water Temp (°F)</label><input type="number" name="waterTemp" value={formData.waterTemp} onChange={handleInputChange} step="0.1" /></div>
+                              </div>
+                            </div>
 
-                        <div className="form-section">
-                          <div className="section-title"><MapPin size={20} /> Location & Depth</div>
-                          <div className="form-grid">
-                            <div className="form-group"><label>Latitude</label><input type="number" name="latitude" value={formData.latitude} onChange={handleInputChange} step="0.00001" placeholder="Auto-populated (editable)" /></div>
-                            <div className="form-group"><label>Longitude</label><input type="number" name="longitude" value={formData.longitude} onChange={handleInputChange} step="0.00001" placeholder="Auto-populated (editable)" /></div>
-                            <div className="form-group"><label>Water Depth (ft)</label><input type="number" name="depth" value={formData.depth} onChange={handleInputChange} step="0.5" /></div>
-                            <div className="form-group"><label>Water Temp (°F)</label><input type="number" name="waterTemp" value={formData.waterTemp} onChange={handleInputChange} step="0.1" /></div>
-                          </div>
-                        </div>
+                            <div className="form-section">
+                              <div className="section-title"><MapPin size={20} /> Cover & Structure</div>
+                              <div className="form-grid">
+                                <div className="form-group"><label>Cover Type</label><input type="text" name="coverType" value={formData.coverType} onChange={handleInputChange} placeholder="e.g., Weeds, Rocks" /></div>
+                              <div className="form-grid">
+                                <div className="form-group"><label>Cover Type</label><input type="text" name="coverType" value={formData.coverType} onChange={handleInputChange} placeholder="e.g., Weeds, Rocks" /></div>
+                              </div>
+                            </div>
 
-                        <div className="form-section">
-                          <div className="section-title"><MapPin size={20} /> Cover & Structure</div>
-                          <div className="form-grid">
-                            <div className="form-group"><label>Cover Type</label><input type="text" name="coverType" value={formData.coverType} onChange={handleInputChange} placeholder="e.g., Weeds, Rocks" /></div>
-                          </div>
-                        </div>
+                            <div className="form-section">
+                              <div className="section-title"><Wind size={20} /> Weather (All Editable)</div>
+                              <div className="form-grid">
+                                <div className="form-group"><label>Air Temp (°F)</label><input type="number" name="weatherTemp" value={formData.weatherTemp} onChange={handleInputChange} step="0.1" placeholder="Auto-populated (editable)" /></div>
+                                <div className="form-group"><label>Wind Speed (mph)</label><input type="number" name="windSpeed" value={formData.windSpeed} onChange={handleInputChange} step="0.5" placeholder="Auto-populated (editable)" /></div>
+                                <div className="form-group"><label>Wind Direction</label><input type="text" name="windDirection" value={formData.windDirection} onChange={handleInputChange} placeholder="e.g., NW (auto-populated, editable)" /></div>
+                                <div className="form-group"><label>Cloud Cover (%)</label><input type="number" name="cloudCover" value={formData.cloudCover} onChange={handleInputChange} min="0" max="100" step="10" placeholder="Auto-populated (editable)" /></div>
+                                <div className="form-group"><label>UV Index</label><input type="number" name="uvIndex" value={formData.uvIndex} onChange={handleInputChange} step="0.5" /></div>
+                                <div className="form-group"><label>Barometric Pressure (mb)</label><input type="number" name="barometricPressure" value={formData.barometricPressure} onChange={handleInputChange} step="0.1" placeholder="Auto-populated (editable)" /></div>
+                                <div className="form-group"><label>Moon Phase</label><select name="moonPhase" value={formData.moonPhase} onChange={handleInputChange} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #2ecc71', backgroundColor: '#0f4c27', color: '#fef5e7', fontSize: '1rem', cursor: 'pointer' }}>
+                                  <option value="">— Select or auto-populated —</option>
+                                  <option value="New Moon">🌑 New Moon</option>
+                                  <option value="Waxing Crescent">🌒 Waxing Crescent</option>
+                                  <option value="First Quarter">🌓 First Quarter</option>
+                                  <option value="Waxing Gibbous">🌔 Waxing Gibbous</option>
+                                  <option value="Full Moon">🌕 Full Moon</option>
+                                  <option value="Waning Gibbous">🌖 Waning Gibbous</option>
+                                  <option value="Last Quarter">🌗 Last Quarter</option>
+                                  <option value="Waning Crescent">🌘 Waning Crescent</option>
+                                </select></div>
+                              </div>
+                            </div>
 
-                        <div className="form-section">
-                          <div className="section-title"><Wind size={20} /> Weather (All Editable)</div>
-                          <div className="form-grid">
-                            <div className="form-group"><label>Air Temp (°F)</label><input type="number" name="weatherTemp" value={formData.weatherTemp} onChange={handleInputChange} step="0.1" placeholder="Auto-populated (editable)" /></div>
-                            <div className="form-group"><label>Wind Speed (mph)</label><input type="number" name="windSpeed" value={formData.windSpeed} onChange={handleInputChange} step="0.5" placeholder="Auto-populated (editable)" /></div>
-                            <div className="form-group"><label>Wind Direction</label><input type="text" name="windDirection" value={formData.windDirection} onChange={handleInputChange} placeholder="e.g., NW (auto-populated, editable)" /></div>
-                            <div className="form-group"><label>Cloud Cover (%)</label><input type="number" name="cloudCover" value={formData.cloudCover} onChange={handleInputChange} min="0" max="100" step="10" placeholder="Auto-populated (editable)" /></div>
-                            <div className="form-group"><label>UV Index</label><input type="number" name="uvIndex" value={formData.uvIndex} onChange={handleInputChange} step="0.5" /></div>
-                            <div className="form-group"><label>Barometric Pressure (mb)</label><input type="number" name="barometricPressure" value={formData.barometricPressure} onChange={handleInputChange} step="0.1" placeholder="Auto-populated (editable)" /></div>
-                            <div className="form-group"><label>Moon Phase</label><select name="moonPhase" value={formData.moonPhase} onChange={handleInputChange} style={{ padding: '8px 12px', borderRadius: '4px', border: '1px solid #2ecc71', backgroundColor: '#0f4c27', color: '#fef5e7', fontSize: '1rem', cursor: 'pointer' }}>
-                              <option value="">— Select or auto-populated —</option>
-                              <option value="New Moon">🌑 New Moon</option>
-                              <option value="Waxing Crescent">🌒 Waxing Crescent</option>
-                              <option value="First Quarter">🌓 First Quarter</option>
-                              <option value="Waxing Gibbous">🌔 Waxing Gibbous</option>
-                              <option value="Full Moon">🌕 Full Moon</option>
-                              <option value="Waning Gibbous">🌖 Waning Gibbous</option>
-                              <option value="Last Quarter">🌗 Last Quarter</option>
-                              <option value="Waning Crescent">🌘 Waning Crescent</option>
-                            </select></div>
-                          </div>
-                        </div>
+                            <div className="form-section">
+                              <div className="section-title">Notes</div>
+                              <textarea name="notes" value={formData.notes} onChange={handleInputChange} placeholder="Any other details..." />
+                            </div>
 
-                        <div className="form-section">
-                          <div className="section-title">Notes</div>
-                          <textarea name="notes" value={formData.notes} onChange={handleInputChange} placeholder="Any other details..." />
+                            <div className="btn-group">
+                              <button type="button" className="btn-danger" onClick={() => setShowForm(false)}>Cancel</button>
+                              <button type="submit" className="btn-primary">Save Catch</button>
+                            </div>
+                          </form>
                         </div>
-
-                        <div className="btn-group">
-                          <button type="button" className="btn-danger" onClick={() => setShowForm(false)}>Cancel</button>
-                          <button type="submit" className="btn-primary">Save Catch</button>
-                        </div>
-                      </form>
+                      </div>
                     )}
 
                     {filteredCatches.length > 0 ? (
