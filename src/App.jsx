@@ -51,6 +51,7 @@ const FishingLogApp = () => {
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
   const [selectedCatchForMap, setSelectedCatchForMap] = useState(null);
+  const [selectedCatchDetails, setSelectedCatchDetails] = useState(null);
   const mapRef = useRef(null);
   
   const [formData, setFormData] = useState({
@@ -737,6 +738,9 @@ const FishingLogApp = () => {
               <button className={`tab-button ${activeTab === 'log' ? 'active' : ''}`} onClick={() => setActiveTab('log')}>
                 <Clock size={20} /> Catch Log
               </button>
+              <button className={`tab-button ${activeTab === 'smart' ? 'active' : ''}`} onClick={() => setActiveTab('smart')}>
+                💡 Smart Catch
+              </button>
               <button className={`tab-button ${activeTab === 'map' ? 'active' : ''}`} onClick={() => setActiveTab('map')}>
                 <Map size={20} /> Interactive Map
               </button>
@@ -963,55 +967,31 @@ const FishingLogApp = () => {
                               {c.length && <div className="detail-row"><div className="detail-item"><div className="detail-label">Length</div><div className="detail-value">{c.length} in</div></div><div className="detail-item"><div className="detail-label">Water Temp</div><div className="detail-value">{c.waterTemp}°F</div></div></div>}
                               {c.depth && <div className="detail-row"><div className="detail-item"><div className="detail-label">Depth</div><div className="detail-value">{c.depth} ft</div></div><div className="detail-item"><div className="detail-label">Location</div><div className="detail-value">{parseFloat(c.latitude)?.toFixed(4)}, {parseFloat(c.longitude)?.toFixed(4)}</div></div></div>}
                               
-                              {/* Mini Map Preview */}
+                              {/* View on Map Button */}
                               {c.latitude && c.longitude && (
                                 <div style={{ marginBottom: '1rem' }}>
-                                  <div className="detail-label">📍 Map Preview</div>
-                                  <div 
+                                  <button 
                                     onClick={() => {
                                       setSelectedCatchForMap(c);
                                       setActiveTab('map');
                                     }}
                                     style={{
                                       width: '100%',
-                                      height: '200px',
-                                      borderRadius: '8px',
-                                      overflow: 'hidden',
-                                      cursor: 'pointer',
-                                      border: '2px solid #2ecc71',
-                                      marginTop: '0.5rem',
-                                      position: 'relative',
-                                      backgroundColor: '#1a1a1a',
-                                      backgroundImage: `url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/13/1904/3364.png')`,
-                                      backgroundSize: 'cover',
-                                      backgroundPosition: 'center'
-                                    }}
-                                  >
-                                    <div style={{
-                                      position: 'absolute',
-                                      top: '50%',
-                                      left: '50%',
-                                      transform: 'translate(-50%, -50%)',
-                                      zIndex: 10,
-                                      color: '#FF4200',
-                                      fontSize: '2rem',
-                                      textShadow: '0 0 10px rgba(0,0,0,0.8)'
-                                    }}>📍</div>
-                                    <div style={{
-                                      position: 'absolute',
-                                      bottom: '10px',
-                                      left: '10px',
-                                      background: 'rgba(46, 204, 113, 0.9)',
-                                      color: 'white',
-                                      padding: '6px 12px',
-                                      borderRadius: '4px',
-                                      fontSize: '0.85rem',
+                                      padding: '10px 15px',
+                                      background: '#2ecc71',
+                                      color: '#0f4c27',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      fontSize: '1rem',
                                       fontWeight: 'bold',
-                                      zIndex: 11
-                                    }}>
-                                      Click to view on map 🗺️
-                                    </div>
-                                  </div>
+                                      cursor: 'pointer',
+                                      transition: 'all 0.2s'
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.background = '#27ae60'}
+                                    onMouseLeave={(e) => e.target.style.background = '#2ecc71'}
+                                  >
+                                    🗺️ View on Map
+                                  </button>
                                 </div>
                               )}
                               
@@ -1067,13 +1047,6 @@ const FishingLogApp = () => {
                               url="https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}"
                               attribution='&copy; Esri'
                               opacity={0.7}
-                            />
-                            
-                            {/* NOAA Bathymetric/Nautical Charts overlay - shows water depth contours */}
-                            <TileLayer
-                              url="https://tileservice.charts.noaa.gov/tiles/raster/mux/{z}/{x}/{y}.png"
-                              attribution='&copy; NOAA'
-                              opacity={0.4}
                             />
                             {catches.map((c, idx) => {
                               const lat = parseFloat(c.latitude);
@@ -1150,7 +1123,20 @@ const FishingLogApp = () => {
                         <h3 style={{ color: '#fef5e7', marginBottom: '1rem', fontFamily: 'Montserrat, sans-serif' }}>All Catches</h3>
                         <div className="catches-grid">
                           {catches.map((c, idx) => (
-                            <div key={c.id} className="catch-card">
+                            <div 
+                              key={c.id} 
+                              className="catch-card"
+                              onClick={() => setSelectedCatchDetails(c)}
+                              style={{ cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.transform = 'translateY(-5px)';
+                                e.currentTarget.style.boxShadow = '0 8px 20px rgba(46, 204, 113, 0.3)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = 'none';
+                              }}
+                            >
                               <div className="catch-header">
                                 <div>
                                   <div className="catch-title">#{idx + 1} - {c.fishSpecies}</div>
@@ -1163,10 +1149,116 @@ const FishingLogApp = () => {
                                   {c.lureImage ? <div className="catch-image"><img src={c.lureImage} alt="Lure" /></div> : <div className="catch-image">No Photo</div>}
                                 </div>
                               )}
+                              <div style={{ padding: '1rem', textAlign: 'center', color: '#2ecc71', fontWeight: 'bold', fontSize: '0.9rem' }}>
+                                Click to view details
+                              </div>
                             </div>
                           ))}
                         </div>
                       </div>
+                    )}
+                  </>
+                )}
+
+                {activeTab === 'smart' && (
+                  <>
+                    <div className="header">
+                      <h1>💡 Smart Catch</h1>
+                      <p>Current conditions and personalized recommendations</p>
+                    </div>
+
+                    {catches.length < 3 ? (
+                      <div className="no-catches"><p>Log at least 3 catches to get personalized recommendations!</p></div>
+                    ) : (
+                      <>
+                        {/* Current Conditions */}
+                        <div className="rec-panel">
+                          <h2 className="rec-title">🌍 Current Conditions</h2>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                            <div className="rec-card">
+                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '0.5rem' }}>🌡️ Air Temperature</div>
+                              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{weatherData?.temperature || '—'}°F</div>
+                            </div>
+                            <div className="rec-card">
+                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '0.5rem' }}>💨 Wind Speed</div>
+                              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{weatherData?.windSpeed?.toFixed(1) || '—'} mph</div>
+                            </div>
+                            <div className="rec-card">
+                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '0.5rem' }}>🧭 Wind Direction</div>
+                              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{weatherData?.windDirection || '—'}</div>
+                            </div>
+                            <div className="rec-card">
+                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '0.5rem' }}>☁️ Cloud Cover</div>
+                              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{weatherData?.cloudCover || '—'}%</div>
+                            </div>
+                            <div className="rec-card">
+                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '0.5rem' }}>☀️ UV Index</div>
+                              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{weatherData?.uvIndex || '—'}</div>
+                            </div>
+                            <div className="rec-card">
+                              <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '0.5rem' }}>🌙 Moon Phase</div>
+                              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{weatherData?.moonPhaseName || '—'}</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Recommendations */}
+                        {recommendations && (
+                          <div className="rec-panel">
+                            <h2 className="rec-title">🎣 Recommendations Based on {recommendations.matches} Similar Catches</h2>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                              {Object.keys(recommendations.bestSpecies).length > 0 && (
+                                <div className="rec-card">
+                                  <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🎣 Expected Species</div>
+                                  {Object.entries(recommendations.bestSpecies).sort(([,a],[,b]) => b-a).slice(0,3).map(([sp, cnt]) => (
+                                    <div key={sp} className="rec-item">{sp} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
+                                  ))}
+                                </div>
+                              )}
+                              {Object.keys(recommendations.bestLures).length > 0 && (
+                                <div className="rec-card">
+                                  <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🪝 Recommended Lures</div>
+                                  {Object.entries(recommendations.bestLures).sort(([,a],[,b]) => b-a).slice(0,3).map(([lure, cnt]) => (
+                                    <div key={lure} className="rec-item">{lure} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
+                                  ))}
+                                </div>
+                              )}
+                              {Object.keys(recommendations.bestLureTypes).length > 0 && (
+                                <div className="rec-card">
+                                  <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>📊 Lure Types</div>
+                                  {Object.entries(recommendations.bestLureTypes).sort(([,a],[,b]) => b-a).slice(0,3).map(([type, cnt]) => (
+                                    <div key={type} className="rec-item">{type} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
+                                  ))}
+                                </div>
+                              )}
+                              {Object.keys(recommendations.bestLureColors).length > 0 && (
+                                <div className="rec-card">
+                                  <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🎨 Lure Colors</div>
+                                  {Object.entries(recommendations.bestLureColors).sort(([,a],[,b]) => b-a).slice(0,3).map(([color, cnt]) => (
+                                    <div key={color} className="rec-item">{color} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
+                                  ))}
+                                </div>
+                              )}
+                              {Object.keys(recommendations.bestCoverTypes).length > 0 && (
+                                <div className="rec-card">
+                                  <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🌿 Cover Types</div>
+                                  {Object.entries(recommendations.bestCoverTypes).sort(([,a],[,b]) => b-a).slice(0,3).map(([cover, cnt]) => (
+                                    <div key={cover} className="rec-item">{cover} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="rec-card">
+                                <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>💧 Water Conditions</div>
+                                <div className="rec-item">Water Temp: {recommendations.avgWaterTemp}°F</div>
+                                <div className="rec-item">Average Depth: {recommendations.avgDepth} ft</div>
+                                {recommendations.depthRange && (
+                                  <div className="rec-item">Depth Range: {recommendations.depthRange.min}-{recommendations.depthRange.max} ft</div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                   </>
                 )}
@@ -1176,7 +1268,191 @@ const FishingLogApp = () => {
         )}
       </div>
     </div>
-  );
-};
+
+    {/* Full Catch Details Modal */}
+    {selectedCatchDetails && (
+      <div style={{
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(0, 0, 0, 0.9)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        padding: '2rem'
+      }}>
+        <div style={{
+          background: '#0f4c27',
+          borderRadius: '12px',
+          maxWidth: '800px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          width: '100%',
+          border: '2px solid #2ecc71',
+          padding: '2rem'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2 style={{ color: '#2ecc71', margin: 0 }}>🎣 {selectedCatchDetails.fishSpecies}</h2>
+            <button
+              onClick={() => setSelectedCatchDetails(null)}
+              style={{
+                background: '#FF4200',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Images */}
+          {(selectedCatchDetails.fishImage || selectedCatchDetails.lureImage) && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+              {selectedCatchDetails.fishImage && (
+                <div style={{ borderRadius: '8px', overflow: 'hidden', border: '2px solid #2ecc71' }}>
+                  <img src={selectedCatchDetails.fishImage} alt="Fish" style={{ width: '100%', height: 'auto' }} />
+                </div>
+              )}
+              {selectedCatchDetails.lureImage && (
+                <div style={{ borderRadius: '8px', overflow: 'hidden', border: '2px solid #2ecc71' }}>
+                  <img src={selectedCatchDetails.lureImage} alt="Lure" style={{ width: '100%', height: 'auto' }} />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Details Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
+            <div>
+              <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Weight</div>
+              <div style={{ color: '#2ecc71', fontSize: '1.3rem', fontWeight: 'bold' }}>{selectedCatchDetails.weight || '—'} lbs</div>
+            </div>
+            <div>
+              <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Length</div>
+              <div style={{ color: '#2ecc71', fontSize: '1.3rem', fontWeight: 'bold' }}>{selectedCatchDetails.length || '—'} in</div>
+            </div>
+            <div>
+              <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Date & Time</div>
+              <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.date} {selectedCatchDetails.time}</div>
+            </div>
+            <div>
+              <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Location</div>
+              <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{parseFloat(selectedCatchDetails.latitude)?.toFixed(4)}, {parseFloat(selectedCatchDetails.longitude)?.toFixed(4)}</div>
+            </div>
+            {selectedCatchDetails.lureName && (
+              <div>
+                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Lure Name</div>
+                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.lureName}</div>
+              </div>
+            )}
+            {selectedCatchDetails.lureType && (
+              <div>
+                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Lure Type</div>
+                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.lureType}</div>
+              </div>
+            )}
+            {selectedCatchDetails.lureColor && (
+              <div>
+                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Lure Color</div>
+                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.lureColor}</div>
+              </div>
+            )}
+            {selectedCatchDetails.waterTemp && (
+              <div>
+                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Water Temp</div>
+                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.waterTemp}°F</div>
+              </div>
+            )}
+            {selectedCatchDetails.depth && (
+              <div>
+                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Depth</div>
+                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.depth} ft</div>
+              </div>
+            )}
+            {selectedCatchDetails.weatherTemp && (
+              <div>
+                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Air Temp</div>
+                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.weatherTemp}°F</div>
+              </div>
+            )}
+            {selectedCatchDetails.windSpeed && (
+              <div>
+                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Wind</div>
+                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.windSpeed} mph {selectedCatchDetails.windDirection}</div>
+              </div>
+            )}
+            {selectedCatchDetails.coverType && (
+              <div>
+                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Cover Type</div>
+                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.coverType}</div>
+              </div>
+            )}
+            {selectedCatchDetails.moonPhase && (
+              <div>
+                <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Moon Phase</div>
+                <div style={{ color: '#fef5e7', fontSize: '1rem' }}>🌙 {selectedCatchDetails.moonPhase}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Notes */}
+          {selectedCatchDetails.notes && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Notes</div>
+              <div style={{ color: '#fef5e7', background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '6px' }}>
+                {selectedCatchDetails.notes}
+              </div>
+            </div>
+          )}
+
+          {/* Buttons */}
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button
+              onClick={() => {
+                setSelectedCatchForMap(selectedCatchDetails);
+                setActiveTab('map');
+                setSelectedCatchDetails(null);
+              }}
+              style={{
+                padding: '10px 20px',
+                background: '#2ecc71',
+                color: '#0f4c27',
+                border: 'none',
+                borderRadius: '6px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}
+            >
+              🗺️ View on Map
+            </button>
+            <button
+              onClick={() => setSelectedCatchDetails(null)}
+              style={{
+                padding: '10px 20px',
+                background: '#3498db',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontSize: '1rem'
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
 export default FishingLogApp;
