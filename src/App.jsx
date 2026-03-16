@@ -60,6 +60,7 @@ const FishingLogApp = () => {
   const [firebaseReady, setFirebaseReady] = useState(false);
   const [syncStatus, setSyncStatus] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [selectedCatchForMap, setSelectedCatchForMap] = useState(null);
   const [selectedCatchDetails, setSelectedCatchDetails] = useState(null);
   const mapRef = useRef(null);
@@ -316,6 +317,41 @@ const FishingLogApp = () => {
     return directions[Math.round(degrees / 22.5) % 16];
   };
 
+  // Compress image to reduce file size
+  const compressImage = (base64String, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Calculate new dimensions
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        // Convert to compressed base64
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressed);
+      };
+      img.src = base64String;
+    });
+  };
+
   const saveCatchToFirebase = async (catchData) => {
     if (!user) {
       throw new Error('Not signed in');
@@ -437,7 +473,7 @@ const FishingLogApp = () => {
     e.preventDefault();
     
     if (!user) {
-      setSyncStatus('⚠ Must sign in to save catches');
+      setSaveError('Must sign in to save catches');
       return;
     }
 
@@ -445,28 +481,34 @@ const FishingLogApp = () => {
     const newCatch = { id: Date.now(), ...formData };
     
     try {
+      // Compress images before saving
+      if (newCatch.fishImage) {
+        newCatch.fishImage = await compressImage(newCatch.fishImage);
+      }
+      if (newCatch.lureImage) {
+        newCatch.lureImage = await compressImage(newCatch.lureImage);
+      }
+
       // Save to Firebase FIRST - wait for confirmation
       const firebaseId = await saveCatchToFirebase(newCatch);
       
       if (!firebaseId || firebaseId.startsWith('local_')) {
         // Firebase save failed
         setIsSaving(false);
-        setSyncStatus('⚠ Save failed - please check connection and try again');
+        setSaveError('Save failed - please check your connection and try again');
         return;
       }
       
       // Only add to state if Firebase save succeeded
       newCatch.firebaseId = firebaseId;
       setCatches(prev => [newCatch, ...prev]);
-      setSyncStatus('✓ Catch saved!');
-      setTimeout(() => setSyncStatus(''), 2000);
       setIsSaving(false);
       resetForm();
       setShowForm(false);
     } catch (error) {
       console.log('Submit error:', error);
       setIsSaving(false);
-      setSyncStatus('⚠ Save failed - ' + error.message);
+      setSaveError(error.message || 'Save failed - please try again');
     }
   };
 
@@ -1532,6 +1574,58 @@ const FishingLogApp = () => {
                   100% { transform: rotate(360deg); }
                 }
               `}</style>
+            </div>
+          </div>
+        )}
+
+        {/* Error Popup Modal */}
+        {saveError && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10001
+          }}>
+            <div style={{
+              background: '#0f4c27',
+              borderRadius: '16px',
+              padding: '2.5rem',
+              textAlign: 'center',
+              border: '3px solid #e74c3c',
+              boxShadow: '0 10px 50px rgba(0,0,0,0.5)',
+              maxWidth: '400px'
+            }}>
+              <div style={{
+                fontSize: '3rem',
+                marginBottom: '1rem'
+              }}>
+                ❌
+              </div>
+              <h2 style={{ color: '#e74c3c', margin: '0 0 1rem 0', fontSize: '1.5rem' }}>Save Failed</h2>
+              <p style={{ color: '#fef5e7', margin: '0 0 1.5rem 0', fontSize: '1rem', lineHeight: '1.5' }}>
+                {saveError}
+              </p>
+              <button
+                onClick={() => setSaveError('')}
+                style={{
+                  padding: '12px 24px',
+                  background: '#e74c3c',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  fontSize: '1rem'
+                }}
+              >
+                Try Again
+              </button>
             </div>
           </div>
         )}
