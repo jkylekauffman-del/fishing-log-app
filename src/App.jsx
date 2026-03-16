@@ -659,7 +659,7 @@ const FishingLogApp = () => {
       return { ...c, matchScore: Math.max(0, score) };
     });
 
-    const topMatches = scored.sort((a, b) => b.matchScore - a.matchScore).slice(0, 5).filter(c => c.matchScore >= 40);
+    const topMatches = scored.sort((a, b) => b.matchScore - a.matchScore).slice(0, 5).filter(c => c.matchScore >= 20);
     if (topMatches.length === 0) return null;
 
     const recs = { 
@@ -1262,36 +1262,6 @@ const FishingLogApp = () => {
                                 </div>
                               )}
 
-                              {/* Fullscreen Button - Top Right */}
-                              {!isFullscreenMap && (
-                                <div style={{
-                                  position: 'fixed',
-                                  top: '1rem',
-                                  right: '1rem',
-                                  zIndex: 500
-                                }}>
-                                  <button
-                                    onClick={() => setIsFullscreenMap(true)}
-                                    style={{
-                                      padding: '8px 12px',
-                                      background: '#2ecc71',
-                                      color: '#fff',
-                                      border: 'none',
-                                      borderRadius: '4px',
-                                      fontWeight: 'bold',
-                                      cursor: 'pointer',
-                                      fontSize: '1.2rem',
-                                      boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
-                                    }}
-                                    onMouseEnter={(e) => e.target.style.opacity = '0.9'}
-                                    onMouseLeave={(e) => e.target.style.opacity = '1'}
-                                    title="Fullscreen Map"
-                                  >
-                                    ⟦ ⟧
-                                  </button>
-                                </div>
-                              )}
-
                             {filteredCatches.map((c, idx) => {
                               const lat = parseFloat(c.latitude);
                               const lng = parseFloat(c.longitude);
@@ -1373,6 +1343,65 @@ const FishingLogApp = () => {
                               );
                             })}
                           </MapContainer>
+
+                          {/* Fullscreen Exit Button (appears in fullscreen mode) */}
+                          {isFullscreenMap && (
+                            <div style={{
+                              position: 'fixed',
+                              top: '1rem',
+                              right: '1rem',
+                              zIndex: 1000
+                            }}>
+                              <button
+                                onClick={() => setIsFullscreenMap(false)}
+                                style={{
+                                  padding: '10px 20px',
+                                  background: '#e74c3c',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  fontSize: '1rem',
+                                  boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                                }}
+                                onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                                onMouseLeave={(e) => e.target.style.opacity = '1'}
+                              >
+                                ⛔ Exit Fullscreen
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Fullscreen Button - Top Right (inside map wrapper) */}
+                          {!isFullscreenMap && (
+                            <div style={{
+                              position: 'absolute',
+                              top: '1rem',
+                              right: '1rem',
+                              zIndex: 500
+                            }}>
+                              <button
+                                onClick={() => setIsFullscreenMap(true)}
+                                style={{
+                                  padding: '8px 12px',
+                                  background: '#2ecc71',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '4px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  fontSize: '1.2rem',
+                                  boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
+                                }}
+                                onMouseEnter={(e) => e.target.style.opacity = '0.9'}
+                                onMouseLeave={(e) => e.target.style.opacity = '1'}
+                                title="Fullscreen Map"
+                              >
+                                ⟦ ⟧
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </>
                     ) : (
