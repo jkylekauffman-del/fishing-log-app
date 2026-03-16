@@ -44,7 +44,6 @@ const FishingLogApp = () => {
   const [activeTab, setActiveTab] = useState('log');
   const [showFilters, setShowFilters] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
-  const [loadingLocation, setLoadingLocation] = useState(false);
   const [weatherData, setWeatherData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [user, setUser] = useState(null);
@@ -132,14 +131,14 @@ const FishingLogApp = () => {
   }, [userLocation]);
 
   const requestUserLocation = () => {
-    setLoadingLocation(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
-          setLoadingLocation(false);
         },
-        () => setLoadingLocation(false)
+        () => {
+          // Location error - continue anyway
+        }
       );
     }
   };
