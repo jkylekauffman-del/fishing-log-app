@@ -159,30 +159,52 @@ const FishingLogApp = () => {
 
   const fetchWeatherData = async (lat, lng) => {
     try {
+      // Round coordinates to 4 decimal places for accuracy
+      const roundedLat = Math.round(lat * 10000) / 10000;
+      const roundedLng = Math.round(lng * 10000) / 10000;
+      
       // Fetch current weather with UV index
       const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m,cloud_cover,pressure_msl,uv_index&timezone=auto`
+        `https://api.open-meteo.com/v1/forecast?latitude=${roundedLat}&longitude=${roundedLng}&current=temperature_2m,wind_speed_10m,wind_direction_10m,cloud_cover,pressure_msl,uv_index&timezone=auto`
       );
       const data = await response.json();
       console.log('Weather API Response:', data);
       
-      // Fetch moon phase with correct format - daily endpoint
+      // Get moon phase from timeanddate.com API (more reliable than open-meteo)
       let moonPhase = 0;
       try {
+        const today = new Date();
         const moonResponse = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=moon_phase&timezone=auto`
+          `https://www.timeanddate.com/scripts/moonphases.json?year=${today.getFullYear()}&month=${today.getMonth() + 1}`
         );
         const moonData = await moonResponse.json();
         console.log('Moon API Response:', moonData);
-        // Get today's moon phase (first value in daily array)
-        if (moonData.daily && moonData.daily.moon_phase && moonData.daily.moon_phase.length > 0) {
-          moonPhase = moonData.daily.moon_phase[0];
-          console.log('Raw Moon Phase Value:', moonPhase);
-        } else {
-          console.log('No moon phase data in response');
+        
+        // Find today's moon phase from the data
+        if (moonData && Array.isArray(moonData)) {
+          const todayStr = today.toISOString().split('T')[0];
+          const todayMoon = moonData.find(m => m.date === todayStr);
+          if (todayMoon && todayMoon.phase) {
+            // Convert percentage to 0-1 scale
+            moonPhase = todayMoon.phase / 100;
+            console.log('Raw Moon Phase Value:', moonPhase, 'Phase:', todayMoon.name);
+          } else {
+            console.log('No moon phase data for today');
+          }
         }
       } catch (e) {
-        console.log('Moon phase fetch error:', e);
+        console.log('Moon phase fetch error, trying alternative:', e);
+        // Fallback: Calculate moon phase using algorithm
+        try {
+          const now = new Date();
+          const knownNewMoon = new Date(2000, 0, 6); // Known new moon date
+          const lunarMonth = 29.53058867; // Days in lunar month
+          const daysSinceNewMoon = (now - knownNewMoon) / (1000 * 60 * 60 * 24);
+          moonPhase = (daysSinceNewMoon % lunarMonth) / lunarMonth;
+          console.log('Calculated Moon Phase:', moonPhase);
+        } catch (calcError) {
+          console.log('Moon phase calculation error:', calcError);
+        }
       }
       
       if (data.current) {
@@ -208,11 +230,13 @@ const FishingLogApp = () => {
           cloudCover: data.current.cloud_cover,
           pressure: data.current.pressure_msl,
           uvIndex: data.current.uv_index || 0,
-          moonPhase: moonPhase || 0,
+          moonPhase: moonPhase,
           moonPhaseName: moonPhaseName
         });
         setFormData(prev => ({
           ...prev,
+          latitude: roundedLat.toString(),
+          longitude: roundedLng.toString(),
           weatherTemp: temp.toString(),
           windSpeed: Math.round(data.current.wind_speed_10m).toString(),
           windDirection: windDir,
