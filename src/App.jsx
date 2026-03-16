@@ -333,16 +333,39 @@ const FishingLogApp = () => {
         userId: user.uid,
         createdAt: new Date().toISOString()
       });
-      setSyncStatus('✓ Synced');
+      setSyncStatus('✓ Synced to cloud');
       setTimeout(() => setSyncStatus(''), 3000);
       return docRef.id;
     } catch (error) {
       console.log('Save error:', error.code, error.message);
-      setSyncStatus('⚠ Saved locally - will sync when online');
-      // Save locally with a local ID - it will sync when connection restored
+      setSyncStatus('✓ Saved locally (offline)');
+      setTimeout(() => setSyncStatus(''), 3000);
+      // Save to localStorage as backup
+      try {
+        const localCatches = JSON.parse(localStorage.getItem('fishingCatches') || '[]');
+        localCatches.push({ ...catchData, id: 'local_' + Date.now() });
+        localStorage.setItem('fishingCatches', JSON.stringify(localCatches));
+      } catch (e) {
+        console.log('localStorage error:', e);
+      }
       return 'local_' + Date.now();
     }
   };
+
+  // Load catches from localStorage on mount
+  useEffect(() => {
+    if (user && firebaseReady) {
+      try {
+        const localCatches = JSON.parse(localStorage.getItem('fishingCatches') || '[]');
+        if (localCatches.length > 0) {
+          setCatches(prev => [...localCatches, ...prev]);
+          localStorage.removeItem('fishingCatches'); // Clear after loading
+        }
+      } catch (e) {
+        console.log('Error loading local catches:', e);
+      }
+    }
+  }, [user, firebaseReady]);
 
   const deleteCatchFromFirebase = async (firebaseId) => {
     if (!user) return;
@@ -1175,10 +1198,34 @@ const FishingLogApp = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
                               {Object.keys(recommendations.bestSpecies).length > 0 && (
                                 <div className="rec-card">
-                                  <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🎣 Expected Species</div>
-                                  {Object.entries(recommendations.bestSpecies).sort(([,a],[,b]) => b-a).slice(0,3).map(([sp, cnt]) => (
-                                    <div key={sp} className="rec-item">{sp} <span style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.2rem 0.5rem', borderRadius: '12px', marginLeft: '0.5rem', fontSize: '0.8rem', fontWeight: 'bold' }}>{cnt}×</span></div>
-                                  ))}
+                                  <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🎣 Target Species</div>
+                                  <select 
+                                    style={{ 
+                                      width: '100%',
+                                      padding: '8px 12px', 
+                                      borderRadius: '4px', 
+                                      border: '1px solid #2ecc71', 
+                                      backgroundColor: '#0f4c27', 
+                                      color: '#fef5e7', 
+                                      fontSize: '1rem', 
+                                      cursor: 'pointer',
+                                      marginBottom: '0.5rem'
+                                    }}
+                                    defaultValue="Largemouth Bass"
+                                  >
+                                    <option value="Largemouth Bass">Largemouth Bass</option>
+                                    {Object.keys(recommendations.bestSpecies)
+                                      .filter(sp => sp !== 'Largemouth Bass')
+                                      .sort((a, b) => recommendations.bestSpecies[b] - recommendations.bestSpecies[a])
+                                      .map(sp => (
+                                        <option key={sp} value={sp}>{sp}</option>
+                                      ))
+                                    }
+                                  </select>
+                                  <div style={{ fontSize: '0.9rem', color: '#ccc' }}>
+                                    Based on {Object.entries(recommendations.bestSpecies)
+                                      .sort(([,a],[,b]) => b-a)[0][1]}× catches
+                                  </div>
                                 </div>
                               )}
                               {Object.keys(recommendations.bestLures).length > 0 && (
