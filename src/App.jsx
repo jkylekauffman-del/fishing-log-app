@@ -626,7 +626,11 @@ const FishingLogApp = () => {
   const filteredCatches = applyFilters(catches);
 
   const getRecommendations = () => {
-    if (catches.length < 3) return null;
+    console.log('🔍 getRecommendations called, catches:', catches.length);
+    if (catches.length < 1) {
+      console.log('❌ Not enough catches');
+      return null;
+    }
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentHour = now.getHours();
@@ -659,20 +663,84 @@ const FishingLogApp = () => {
       return { ...c, matchScore: Math.max(0, score) };
     });
 
+    console.log('📊 Scored catches:', scored.map(c => ({ species: c.fishSpecies, score: c.matchScore })));
+
     // Try thresholds in descending order
-    const thresholds = [40, 30, 20];
+    const thresholds = [40, 30, 20, 0];
     let topMatches = [];
     let confidenceScore = 0;
+    let hasLowConfidence = false;
     
     for (let threshold of thresholds) {
       topMatches = scored.sort((a, b) => b.matchScore - a.matchScore).slice(0, 5).filter(c => c.matchScore >= threshold);
+      console.log(`🎯 Threshold ${threshold}: ${topMatches.length} matches`);
       if (topMatches.length > 0) {
         confidenceScore = threshold;
+        if (threshold < 20) hasLowConfidence = true;
         break;
       }
     }
     
-    if (topMatches.length === 0) return null;
+    if (topMatches.length === 0) {
+      console.log('❌ No matches found');
+      return null;
+    }
+
+    console.log('✅ Found recommendations with confidence:', confidenceScore);
+
+    // Determine confidence level based on threshold
+    let confidence = '';
+    if (confidenceScore >= 40) confidence = '⭐⭐⭐⭐⭐ Excellent Match';
+    else if (confidenceScore >= 30) confidence = '⭐⭐⭐⭐ Strong Match';
+    else if (confidenceScore >= 20) confidence = '⭐⭐⭐ Good Match';
+    else confidence = '⭐⭐ Limited Data - Log More Catches for Better Recommendations';
+
+    const recs = { 
+      bestLures: {}, 
+      bestLureTypes: {},
+      bestLureColors: {},
+      bestSpecies: {}, 
+      bestCoverTypes: {}, 
+      avgWaterTemp: 0, 
+      avgDepth: 0,
+      depthRange: { min: Infinity, max: -Infinity },
+      matches: topMatches.length,
+      confidence: confidence,
+      confidenceScore: confidenceScore,
+      hasLowConfidence: hasLowConfidence
+    };
+    
+    topMatches.forEach(c => {
+      if (c.lureName) {
+        const key = `${c.lureName} (${c.lureColor})`;
+        recs.bestLures[key] = (recs.bestLures[key] || 0) + 1;
+      }
+      if (c.lureType) {
+        recs.bestLureTypes[c.lureType] = (recs.bestLureTypes[c.lureType] || 0) + 1;
+      }
+      if (c.lureColor) {
+        recs.bestLureColors[c.lureColor] = (recs.bestLureColors[c.lureColor] || 0) + 1;
+      }
+      if (c.fishSpecies) recs.bestSpecies[c.fishSpecies] = (recs.bestSpecies[c.fishSpecies] || 0) + 1;
+      if (c.coverType) recs.bestCoverTypes[c.coverType] = (recs.bestCoverTypes[c.coverType] || 0) + 1;
+      if (c.waterTemp) recs.avgWaterTemp += parseFloat(c.waterTemp);
+      if (c.depth) {
+        const depth = parseFloat(c.depth);
+        recs.avgDepth += depth;
+        recs.depthRange.min = Math.min(recs.depthRange.min, depth);
+        recs.depthRange.max = Math.max(recs.depthRange.max, depth);
+      }
+    });
+
+    // Count how many catches actually have waterTemp and depth values
+    const catchesWithWaterTemp = topMatches.filter(c => c.waterTemp).length;
+    const catchesWithDepth = topMatches.filter(c => c.depth).length;
+
+    recs.avgWaterTemp = catchesWithWaterTemp > 0 ? (recs.avgWaterTemp / catchesWithWaterTemp).toFixed(1) : 0;
+    recs.avgDepth = catchesWithDepth > 0 ? (recs.avgDepth / catchesWithDepth).toFixed(1) : 0;
+    if (recs.depthRange.min === Infinity) recs.depthRange = null;
+    return recs;
+  };
 
     // Determine confidence level based on threshold
     let confidence = '';
@@ -727,6 +795,11 @@ const FishingLogApp = () => {
   };
 
   const recommendations = getRecommendations();
+  console.log('Recommendations Debug:', { 
+    catches: catches.length, 
+    recommendations: recommendations,
+    hasWeatherData: !!weatherData 
+  });
 
   const getCatchStats = () => {
     if (filteredCatches.length === 0) return null;
@@ -1444,8 +1517,8 @@ const FishingLogApp = () => {
                       <p>Current conditions and personalized recommendations</p>
                     </div>
 
-                    {catches.length < 3 ? (
-                      <div className="no-catches"><p>Log at least 3 catches to get personalized recommendations!</p></div>
+                    {catches.length < 1 ? (
+                      <div className="no-catches"><p>Log at least 1 catch to get started with Smart Catch!</p></div>
                     ) : (
                       <>
                         {/* Current Conditions */}
@@ -1479,16 +1552,25 @@ const FishingLogApp = () => {
                           </div>
                         </div>
 
-                        {/* Recommendations */}
-                        {recommendations && (
-                          <div className="rec-panel">
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                              <h2 className="rec-title">🎣 Recommendations Based on {recommendations.matches} Similar Catches</h2>
-                              <div style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.95rem' }}>
-                                {recommendations.confidence}
+                        {/* Recommendations or Low Data Message */}
+                        {recommendations ? (
+                          <>
+                            {recommendations.hasLowConfidence && (
+                              <div className="rec-panel" style={{ background: 'rgba(230, 126, 34, 0.1)', borderLeft: '4px solid #e67e22' }}>
+                                <p style={{ color: '#fef5e7', fontSize: '1.1rem', margin: 0 }}>
+                                  📊 <strong>Not enough similar conditions yet</strong> - Log more catches to get better recommendations! Your current data helps us learn your patterns.
+                                </p>
                               </div>
-                            </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
+                            )}
+
+                            <div className="rec-panel">
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                                <h2 className="rec-title">🎣 Recommendations Based on {recommendations.matches} Catch{recommendations.matches !== 1 ? 'es' : ''}</h2>
+                                <div style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                                  {recommendations.confidence}
+                                </div>
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
                               {Object.keys(recommendations.bestSpecies).length > 0 && (
                                 <div className="rec-card">
                                   <div style={{ fontWeight: 700, color: '#2ecc71', marginBottom: '1rem' }}>🎣 Target Species</div>
@@ -1562,6 +1644,13 @@ const FishingLogApp = () => {
                                 )}
                               </div>
                             </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="rec-panel">
+                            <p style={{ color: '#fef5e7', fontSize: '1.1rem', textAlign: 'center' }}>
+                              📊 <strong>Log your first catch to get started!</strong> Once you have some catch history, Smart Catch will analyze patterns and give you recommendations.
+                            </p>
                           </div>
                         )}
                       </>
