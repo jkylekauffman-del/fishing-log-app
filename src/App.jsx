@@ -317,7 +317,23 @@ const FishingLogApp = () => {
     return directions[Math.round(degrees / 22.5) % 16];
   };
 
-  // Compress image to reduce file size
+  // Scroll to top of page
+  const scrollToTop = () => {
+    const contentArea = document.querySelector('.content-area');
+    if (contentArea) {
+      contentArea.scrollTop = 0;
+    }
+  };
+
+  // Convert 24-hour time to 12-hour format
+  const formatTime12Hour = (timeStr) => {
+    if (!timeStr) return '';
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
   const compressImage = (base64String, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -1003,7 +1019,7 @@ const FishingLogApp = () => {
                             <div className="catch-header">
                               <div>
                                 <div className="catch-title">{c.fishSpecies || 'Unknown'} · {c.weight ? `${c.weight} lbs` : 'N/A'}</div>
-                                <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{c.date} {c.time}</div>
+                                <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{c.date} {formatTime12Hour(c.time)}</div>
                               </div>
                               <button className="expand-btn" onClick={() => setExpandedId(expandedId === c.id ? null : c.id)}>
                                 <ChevronDown size={20} />
@@ -1029,6 +1045,7 @@ const FishingLogApp = () => {
                                     onClick={() => {
                                       setSelectedCatchForMap(c);
                                       setActiveTab('map');
+                                      setTimeout(scrollToTop, 0);
                                     }}
                                     style={{
                                       width: '100%',
@@ -1118,7 +1135,7 @@ const FishingLogApp = () => {
                                         🎣 {c.fishSpecies || 'Unknown'} - {c.weight || 'N/A'} lbs
                                       </div>
                                       <div style={{ marginBottom: '6px' }}>
-                                        <strong>Date:</strong> {c.date} {c.time}
+                                        <strong>Date:</strong> {c.date} {formatTime12Hour(c.time)}
                                       </div>
                                       {c.lureColor && c.lureName && (
                                         <div style={{ marginBottom: '6px' }}>
@@ -1178,46 +1195,7 @@ const FishingLogApp = () => {
                         <div className="no-catches"><p>No catches logged yet. Log your first catch to see it on the map!</p></div>
                       )}
 
-                    {catches.length > 0 && (
-                      <div style={{ marginTop: '2rem' }}>
-                        <h3 style={{ color: '#fef5e7', marginBottom: '1rem', fontFamily: 'Montserrat, sans-serif' }}>All Catches</h3>
-                        <div className="catches-grid">
-                          {catches.map((c, idx) => (
-                            <div 
-                              key={c.id} 
-                              className="catch-card"
-                              onClick={() => setSelectedCatchDetails(c)}
-                              style={{ cursor: 'pointer', transition: 'transform 0.2s, box-shadow 0.2s' }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-5px)';
-                                e.currentTarget.style.boxShadow = '0 8px 20px rgba(46, 204, 113, 0.3)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = 'none';
-                              }}
-                            >
-                              <div className="catch-header">
-                                <div>
-                                  <div className="catch-title">#{idx + 1} - {c.fishSpecies}</div>
-                                  <div style={{ fontSize: '0.85rem', opacity: 0.9 }}>{c.date} {c.time}</div>
-                                </div>
-                              </div>
-                              {(c.fishImage || c.lureImage) && (
-                                <div className="catch-images">
-                                  {c.fishImage ? <div className="catch-image"><img src={c.fishImage} alt="Fish" /></div> : <div className="catch-image">No Photo</div>}
-                                  {c.lureImage ? <div className="catch-image"><img src={c.lureImage} alt="Lure" /></div> : <div className="catch-image">No Photo</div>}
-                                </div>
-                              )}
-                              <div style={{ padding: '1rem', textAlign: 'center', color: '#2ecc71', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                                Click to view details
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </>
+                    </>
                 )}
 
                 {activeTab === 'smart' && (
@@ -1424,7 +1402,7 @@ const FishingLogApp = () => {
                 </div>
                 <div>
                   <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Date & Time</div>
-                  <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.date} {selectedCatchDetails.time}</div>
+                  <div style={{ color: '#fef5e7', fontSize: '1rem' }}>{selectedCatchDetails.date} {formatTime12Hour(selectedCatchDetails.time)}</div>
                 </div>
                 <div>
                   <div style={{ color: '#ccc', fontSize: '0.9rem', marginBottom: '0.25rem' }}>Location</div>
@@ -1503,6 +1481,7 @@ const FishingLogApp = () => {
                     setSelectedCatchForMap(selectedCatchDetails);
                     setActiveTab('map');
                     setSelectedCatchDetails(null);
+                    setTimeout(scrollToTop, 0);
                   }}
                   style={{
                     padding: '10px 20px',
