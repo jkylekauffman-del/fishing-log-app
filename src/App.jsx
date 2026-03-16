@@ -659,8 +659,26 @@ const FishingLogApp = () => {
       return { ...c, matchScore: Math.max(0, score) };
     });
 
-    const topMatches = scored.sort((a, b) => b.matchScore - a.matchScore).slice(0, 5).filter(c => c.matchScore >= 20);
+    // Try thresholds in descending order
+    const thresholds = [40, 30, 20];
+    let topMatches = [];
+    let confidenceScore = 0;
+    
+    for (let threshold of thresholds) {
+      topMatches = scored.sort((a, b) => b.matchScore - a.matchScore).slice(0, 5).filter(c => c.matchScore >= threshold);
+      if (topMatches.length > 0) {
+        confidenceScore = threshold;
+        break;
+      }
+    }
+    
     if (topMatches.length === 0) return null;
+
+    // Determine confidence level based on threshold
+    let confidence = '';
+    if (confidenceScore >= 40) confidence = '⭐⭐⭐⭐⭐ Excellent Match';
+    else if (confidenceScore >= 30) confidence = '⭐⭐⭐⭐ Strong Match';
+    else if (confidenceScore >= 20) confidence = '⭐⭐⭐ Good Match';
 
     const recs = { 
       bestLures: {}, 
@@ -671,7 +689,9 @@ const FishingLogApp = () => {
       avgWaterTemp: 0, 
       avgDepth: 0,
       depthRange: { min: Infinity, max: -Infinity },
-      matches: topMatches.length 
+      matches: topMatches.length,
+      confidence: confidence,
+      confidenceScore: confidenceScore
     };
     
     topMatches.forEach(c => {
@@ -1462,7 +1482,12 @@ const FishingLogApp = () => {
                         {/* Recommendations */}
                         {recommendations && (
                           <div className="rec-panel">
-                            <h2 className="rec-title">🎣 Recommendations Based on {recommendations.matches} Similar Catches</h2>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                              <h2 className="rec-title">🎣 Recommendations Based on {recommendations.matches} Similar Catches</h2>
+                              <div style={{ background: '#2ecc71', color: '#0f4c27', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                                {recommendations.confidence}
+                              </div>
+                            </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginTop: '1rem' }}>
                               {Object.keys(recommendations.bestSpecies).length > 0 && (
                                 <div className="rec-card">
