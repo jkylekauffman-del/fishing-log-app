@@ -136,6 +136,7 @@ const FishingLogApp = () => {
         windDirection: weatherData.windDirection || '',
         cloudCover: weatherData.cloudCover?.toString() || '',
         barometricPressure: weatherData.pressure?.toFixed(1) || '',
+        uvIndex: weatherData.uvIndex?.toString() || '',
         moonPhase: weatherData.moonPhaseName || ''
       }));
     }
@@ -162,6 +163,7 @@ const FishingLogApp = () => {
         `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m,wind_direction_10m,cloud_cover,pressure_msl,uv_index&timezone=auto`
       );
       const data = await response.json();
+      console.log('Weather API Response:', data);
       
       // Fetch moon phase separately
       let moonPhase = 0;
@@ -170,6 +172,7 @@ const FishingLogApp = () => {
           `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=moon_phase&timezone=auto`
         );
         const moonData = await moonResponse.json();
+        console.log('Moon API Response:', moonData);
         moonPhase = moonData.daily?.moon_phase?.[0] || 0;
       } catch (e) {
         console.log('Moon phase fetch error:', e);
@@ -179,6 +182,17 @@ const FishingLogApp = () => {
         const temp = Math.round(data.current.temperature_2m * 9/5 + 32);
         const windDir = getWindDirection(data.current.wind_direction_10m);
         const moonPhaseName = getMoonPhaseName(moonPhase);
+        
+        console.log('Processed Weather Data:', {
+          temperature: temp,
+          windSpeed: data.current.wind_speed_10m,
+          windDirection: windDir,
+          cloudCover: data.current.cloud_cover,
+          pressure: data.current.pressure_msl,
+          uvIndex: data.current.uv_index,
+          moonPhase: moonPhase,
+          moonPhaseName: moonPhaseName
+        });
         
         setWeatherData({
           temperature: temp,
@@ -207,15 +221,23 @@ const FishingLogApp = () => {
   };
 
   const getMoonPhaseName = (phase) => {
-    // Open-Meteo returns 0-1 where 0 = New Moon, 0.5 = Full Moon
-    if (phase < 0.0625) return 'New Moon';
-    if (phase < 0.1875) return 'Waxing Crescent';
-    if (phase < 0.3125) return 'First Quarter';
-    if (phase < 0.4375) return 'Waxing Gibbous';
-    if (phase < 0.5625) return 'Full Moon';
-    if (phase < 0.6875) return 'Waning Gibbous';
-    if (phase < 0.8125) return 'Last Quarter';
-    if (phase < 0.9375) return 'Waning Crescent';
+    // Open-Meteo returns 0-1 where:
+    // 0 = New Moon
+    // 0.25 = First Quarter (waxing)
+    // 0.5 = Full Moon
+    // 0.75 = Last Quarter (waning)
+    // Each phase spans 1/8 (0.125) of the cycle
+    
+    const adjustedPhase = phase % 1; // Normalize to 0-1
+    
+    if (adjustedPhase < 0.0625) return 'New Moon';
+    if (adjustedPhase < 0.1875) return 'Waxing Crescent';
+    if (adjustedPhase < 0.3125) return 'First Quarter';
+    if (adjustedPhase < 0.4375) return 'Waxing Gibbous';
+    if (adjustedPhase < 0.5625) return 'Full Moon';
+    if (adjustedPhase < 0.6875) return 'Waning Gibbous';
+    if (adjustedPhase < 0.8125) return 'Last Quarter';
+    if (adjustedPhase < 0.9375) return 'Waning Crescent';
     return 'New Moon';
   };
 
