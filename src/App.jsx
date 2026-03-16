@@ -1089,11 +1089,97 @@ const FishingLogApp = () => {
                       <p>Zoom and pan to explore where you caught fish</p>
                     </div>
 
-                    {catches.length > 0 ? (
+                    {/* Map Filters Toggle */}
+                    <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <button
+                        onClick={() => setShowFilters(!showFilters)}
+                        style={{
+                          padding: '10px 20px',
+                          background: showFilters ? '#2ecc71' : '#1a5c3a',
+                          color: '#fef5e7',
+                          border: '2px solid #2ecc71',
+                          borderRadius: '6px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          fontSize: '1rem',
+                          transition: 'all 0.3s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.transform = 'translateY(-2px)'}
+                        onMouseLeave={(e) => e.target.style.transform = 'translateY(0)'}
+                      >
+                        {showFilters ? '🔽 Hide Filters' : '🔎 Show Filters'}
+                      </button>
+                      <div style={{ color: '#2ecc71', fontWeight: 'bold', fontSize: '0.95rem' }}>
+                        Showing {filteredCatches.length} of {catches.length} catches
+                      </div>
+                    </div>
+
+                    {/* Filters Panel */}
+                    {showFilters && (
+                      <div style={{
+                        background: 'rgba(46, 204, 113, 0.1)',
+                        border: '2px solid #2ecc71',
+                        borderRadius: '12px',
+                        padding: '1.5rem',
+                        marginBottom: '1.5rem'
+                      }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                          <div>
+                            <label style={{ color: '#fef5e7', display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Species</label>
+                            <input type="text" name="species" value={filters.species} onChange={handleFilterChange} placeholder="e.g., Largemouth Bass" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #2ecc71', backgroundColor: '#0f4c27', color: '#fef5e7' }} />
+                          </div>
+                          <div>
+                            <label style={{ color: '#fef5e7', display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Min Weight (lbs)</label>
+                            <input type="number" name="minWeight" value={filters.minWeight} onChange={handleFilterChange} placeholder="Min" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #2ecc71', backgroundColor: '#0f4c27', color: '#fef5e7' }} />
+                          </div>
+                          <div>
+                            <label style={{ color: '#fef5e7', display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Max Weight (lbs)</label>
+                            <input type="number" name="maxWeight" value={filters.maxWeight} onChange={handleFilterChange} placeholder="Max" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #2ecc71', backgroundColor: '#0f4c27', color: '#fef5e7' }} />
+                          </div>
+                          <div>
+                            <label style={{ color: '#fef5e7', display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Lure Type</label>
+                            <input type="text" name="lureType" value={filters.lureType} onChange={handleFilterChange} placeholder="e.g., Crankbait" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #2ecc71', backgroundColor: '#0f4c27', color: '#fef5e7' }} />
+                          </div>
+                          <div>
+                            <label style={{ color: '#fef5e7', display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Min Water Temp (°F)</label>
+                            <input type="number" name="minWaterTemp" value={filters.minWaterTemp} onChange={handleFilterChange} placeholder="Min" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #2ecc71', backgroundColor: '#0f4c27', color: '#fef5e7' }} />
+                          </div>
+                          <div>
+                            <label style={{ color: '#fef5e7', display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Max Water Temp (°F)</label>
+                            <input type="number" name="maxWaterTemp" value={filters.maxWaterTemp} onChange={handleFilterChange} placeholder="Max" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #2ecc71', backgroundColor: '#0f4c27', color: '#fef5e7' }} />
+                          </div>
+                          <div>
+                            <label style={{ color: '#fef5e7', display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Cover Type</label>
+                            <input type="text" name="coverType" value={filters.coverType} onChange={handleFilterChange} placeholder="e.g., Weeds" style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #2ecc71', backgroundColor: '#0f4c27', color: '#fef5e7' }} />
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setFilters({
+                            species: '', minWeight: '', maxWeight: '', minLength: '', maxLength: '',
+                            lureType: '', lureName: '', minWaterTemp: '', maxWaterTemp: '',
+                            minDepth: '', maxDepth: '', coverType: '', minAirTemp: '', maxAirTemp: ''
+                          })}
+                          style={{
+                            marginTop: '1rem',
+                            padding: '8px 16px',
+                            background: '#e74c3c',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          Clear All Filters
+                        </button>
+                      </div>
+                    )}
+
+                    {filteredCatches.length > 0 ? (
                       <div style={{ width: '100%', height: '600px', borderRadius: '12px', overflow: 'hidden', marginBottom: '2rem', boxShadow: '0 4px 15px rgba(0,0,0,0.3)' }}>
                         <MapContainer 
                             ref={mapRef}
-                            center={selectedCatchForMap ? [parseFloat(selectedCatchForMap.latitude), parseFloat(selectedCatchForMap.longitude)] : [parseFloat(catches[0].latitude) || 30.2672, parseFloat(catches[0].longitude) || -97.7431]} 
+                            center={selectedCatchForMap ? [parseFloat(selectedCatchForMap.latitude), parseFloat(selectedCatchForMap.longitude)] : [parseFloat(filteredCatches[0].latitude) || 30.2672, parseFloat(filteredCatches[0].longitude) || -97.7431]} 
                             zoom={selectedCatchForMap ? 16 : 13} 
                             style={{ height: '100%', width: '100%' }}
                           >
@@ -1109,7 +1195,7 @@ const FishingLogApp = () => {
                               attribution='&copy; Esri'
                               opacity={0.7}
                             />
-                            {catches.map((c, idx) => {
+                            {filteredCatches.map((c, idx) => {
                               const lat = parseFloat(c.latitude);
                               const lng = parseFloat(c.longitude);
                               if (!lat || !lng) return null;
@@ -1192,7 +1278,13 @@ const FishingLogApp = () => {
                           </MapContainer>
                         </div>
                       ) : (
-                        <div className="no-catches"><p>No catches logged yet. Log your first catch to see it on the map!</p></div>
+                        <div className="no-catches">
+                          <p>
+                            {catches.length === 0 
+                              ? 'No catches logged yet. Log your first catch to see it on the map!'
+                              : 'No catches match your filters. Try adjusting them!'}
+                          </p>
+                        </div>
                       )}
 
                     </>
